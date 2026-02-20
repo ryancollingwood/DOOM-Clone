@@ -15,9 +15,20 @@ class MapRenderer:
         #
         self.segments = self.remap_array(
             [seg.pos for seg in self.engine.bsp_builder.segments])
+        self.segment_normals = self.get_segment_normals()
         self.counter = 0.0
         #
         self.should_draw = False
+
+    def get_segment_normals(self, scale=10):
+        normals = []
+        for p0, p1 in self.segments:
+            p10 = p1 - p0
+            normal = normalize(vec2(-p10.y, p10.x))
+            n0 = (p0 + p1) * 0.5
+            n1 = n0 + normal * scale
+            normals.append(((n0.x, n0.y), (n1.x, n1.y)))
+        return normals
 
     def get_map_bounds(self):
         dx = self.x_max - self.x_min
@@ -46,21 +57,13 @@ class MapRenderer:
         #
         for seg_id in segment_ids:
         # for seg_id in segment_ids[:int(self.counter) % (len(segment_ids) + 1)]:
-            (x0, y0), (x1, y1) = p0, p1 = self.segments[seg_id]
+            (x0, y0), (x1, y1) = self.segments[seg_id]
             #
             ray.draw_line_v((x0, y0), (x1, y1), seg_color)
-            self.draw_normal(p0, p1, seg_color)
+            ray.draw_line_v(*self.segment_normals[seg_id], seg_color)
             #
             ray.draw_circle_v((x0, y0), 2, ray.WHITE)
             ray.draw_circle_v((x1, y1), 2, ray.WHITE)
-
-    def draw_normal(self, p0, p1, color, scale=10):
-        p10 = p1 - p0
-        normal = normalize(vec2(-p10.y, p10.x))
-        n0 = (p0 + p1) * 0.5
-        n1 = n0 + normal * scale
-        #
-        ray.draw_line_v((n0.x, n0.y), (n1.x, n1.y), color)
 
     def draw_raw_segments(self):
         for p0, p1 in self.raw_segments:
