@@ -1,6 +1,6 @@
 from settings import *
 from random import randrange
-from enum import IntEnum, auto
+from enum import IntEnum
 from typing import Union
 from texture_id import *
 

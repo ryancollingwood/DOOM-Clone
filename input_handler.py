@@ -1,5 +1,5 @@
 from settings import *
-from enum import IntEnum, auto
+from enum import IntEnum
 from pyray import is_key_down, is_key_pressed, KeyboardKey
 
 
