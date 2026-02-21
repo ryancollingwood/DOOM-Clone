@@ -43,6 +43,9 @@ class Segment:
         self.up_tex_id: int = up_tex_id
         #
         self.wall_model_ids: set[int] = set()
+        # optimization: pre-partitioned walls for faster rendering
+        self.mid_walls: list = []
+        self.other_walls: list = []
         #
         self.has_portal_low: bool = True
         self.has_portal_mid: bool = True
