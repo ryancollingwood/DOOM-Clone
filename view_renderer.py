@@ -17,8 +17,8 @@ class ViewRenderer:
         self.wall_models = self.models.wall_models
         self.flat_models = self.models.flat_models
         #
-        self.walls_to_draw = set()
-        self.mid_walls_to_draw = {}  # as ordered set
+        self.walls_to_draw = []
+        self.mid_walls_to_draw = []
         #
         self.screen_tint = WHITE_COLOR
 
@@ -27,14 +27,9 @@ class ViewRenderer:
         self.mid_walls_to_draw.clear()
 
         for seg_id in self.segment_ids_to_draw:
-            # walls
-            for wall_id in self.segments[seg_id].wall_model_ids:
-                wall = self.wall_models[wall_id]
-                #
-                if wall.wall_type == WallType.PORTAL_MID:
-                    self.mid_walls_to_draw[wall_id] = wall
-                else:
-                    self.walls_to_draw.add(wall)
+            segment = self.segments[seg_id]
+            self.walls_to_draw.extend(segment.other_wall_models)
+            self.mid_walls_to_draw.extend(segment.mid_wall_models)
 
     def draw(self):
         # draw flats
@@ -49,7 +44,7 @@ class ViewRenderer:
             ray.draw_model(wall.model, VEC3_ZERO, 1.0, self.get_tint(wall))
 
         # draw portal_mid walls from back to front
-        for wall in reversed(self.mid_walls_to_draw.values()):
+        for wall in reversed(self.mid_walls_to_draw):
             ray.draw_model(wall.model, VEC3_ZERO, 1.0, self.get_tint(wall))
 
     def get_tint(self, wall: WallModel):
