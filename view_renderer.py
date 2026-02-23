@@ -27,14 +27,10 @@ class ViewRenderer:
         self.mid_walls_to_draw.clear()
 
         for seg_id in self.segment_ids_to_draw:
+            segment = self.segments[seg_id]
             # walls
-            for wall_id in self.segments[seg_id].wall_model_ids:
-                wall = self.wall_models[wall_id]
-                #
-                if wall.wall_type == WallType.PORTAL_MID:
-                    self.mid_walls_to_draw[wall_id] = wall
-                else:
-                    self.walls_to_draw.add(wall)
+            self.mid_walls_to_draw.update(segment.mid_wall_models)
+            self.walls_to_draw.update(segment.other_wall_models)
 
     def draw(self):
         # draw flats

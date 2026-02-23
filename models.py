@@ -68,6 +68,13 @@ class Models:
         self.wall_models.append(wall_model)
         #
         segment.wall_model_ids.add(self.wall_id)
+
+        # Optimization: pre-partition wall models by type
+        if wall_model.wall_type == WallType.PORTAL_MID:
+            segment.mid_wall_models[self.wall_id] = wall_model
+        else:
+            segment.other_wall_models.append(wall_model)
+
         self.wall_id += 1
 
 

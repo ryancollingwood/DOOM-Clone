@@ -44,6 +44,9 @@ class Segment:
         #
         self.wall_model_ids: set[int] = set()
         #
+        self.mid_wall_models: dict = {}
+        self.other_wall_models: list = []
+        #
         self.has_portal_low: bool = True
         self.has_portal_mid: bool = True
         self.has_portal_up: bool = True
