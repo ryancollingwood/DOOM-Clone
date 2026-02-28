@@ -23,16 +23,27 @@ class BSPTreeTraverser:
     def traverse(self, node: BSPNode):
         if node is None:
             return None
+        self._traverse(node, self.pos_2d.x, self.pos_2d.y)
 
-        on_front = is_on_front(self.pos_2d - node.splitter_p0, node.splitter_vec)
+    def _traverse(self, node: BSPNode, x: float, y: float):
+        if node is None:
+            return None
+
+        # Inline is_on_front logic with scalars to avoid vec2 object creation in tight loop
+        dx = x - node.splitter_p0.x
+        dy = y - node.splitter_p0.y
+        vx = node.splitter_vec.x
+        vy = node.splitter_vec.y
+        on_front = dx * vy < vx * dy
+
         #
         if on_front:
-            self.traverse(node.front)
+            self._traverse(node.front, x, y)
             #
             self.seg_ids_to_draw.append(node.segment_id)
             #
-            self.traverse(node.back)
+            self._traverse(node.back, x, y)
         else:
-            self.traverse(node.back)
+            self._traverse(node.back, x, y)
             #
-            self.traverse(node.front)
+            self._traverse(node.front, x, y)
