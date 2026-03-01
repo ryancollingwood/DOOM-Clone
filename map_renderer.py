@@ -15,6 +15,10 @@ class MapRenderer:
         #
         self.segments = self.remap_array(
             [seg.pos for seg in self.engine.bsp_builder.segments])
+
+        # Pre-calculate normals for segments to avoid redundant computation each frame
+        self.segment_normals = [self.calc_normal(p0, p1) for p0, p1 in self.segments]
+
         self.counter = 0.0
         #
         self.should_draw = False
@@ -49,18 +53,20 @@ class MapRenderer:
             (x0, y0), (x1, y1) = p0, p1 = self.segments[seg_id]
             #
             ray.draw_line_v((x0, y0), (x1, y1), seg_color)
-            self.draw_normal(p0, p1, seg_color)
+
+            # Use pre-calculated normals
+            n0, n1 = self.segment_normals[seg_id]
+            ray.draw_line_v((n0.x, n0.y), (n1.x, n1.y), seg_color)
             #
             ray.draw_circle_v((x0, y0), 2, ray.WHITE)
             ray.draw_circle_v((x1, y1), 2, ray.WHITE)
 
-    def draw_normal(self, p0, p1, color, scale=10):
+    def calc_normal(self, p0, p1, scale=10):
         p10 = p1 - p0
         normal = normalize(vec2(-p10.y, p10.x))
         n0 = (p0 + p1) * 0.5
         n1 = n0 + normal * scale
-        #
-        ray.draw_line_v((n0.x, n0.y), (n1.x, n1.y), color)
+        return n0, n1
 
     def draw_raw_segments(self):
         for p0, p1 in self.raw_segments:
