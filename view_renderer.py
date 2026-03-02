@@ -45,27 +45,26 @@ class ViewRenderer:
                 processed_other.add(other_id)
 
     def draw(self):
+        # Cache screen_tint and pre-calculate shade_tint to avoid O(N) attribute lookups and conditional checks in the inner render loops
+        screen_tint = self.screen_tint
+        shade_tint = SHADING_DARK_COLOR if self.map_renderer.should_draw else SHADING_COLOR
+
         # draw flats
         for sec_id in self.sectors:
             #
             floor, ceil = self.flat_models[sec_id]
-            ray.draw_model(ceil.model, VEC3_ZERO, 1.0, self.screen_tint)
-            ray.draw_model(floor.model, VEC3_ZERO, 1.0, self.screen_tint)
+            ray.draw_model(ceil.model, VEC3_ZERO, 1.0, screen_tint)
+            ray.draw_model(floor.model, VEC3_ZERO, 1.0, screen_tint)
 
         # draw walls
         for wall in self.walls_to_draw:
-            ray.draw_model(wall.model, VEC3_ZERO, 1.0, self.get_tint(wall))
+            tint = shade_tint if wall.is_shaded else screen_tint
+            ray.draw_model(wall.model, VEC3_ZERO, 1.0, tint)
 
         # draw portal_mid walls from back to front
         for wall in reversed(self.mid_walls_to_draw.values()):
-            ray.draw_model(wall.model, VEC3_ZERO, 1.0, self.get_tint(wall))
-
-    def get_tint(self, wall: WallModel):
-        if wall.is_shaded:
-            if self.map_renderer.should_draw:
-                return SHADING_DARK_COLOR
-            return SHADING_COLOR
-        return self.screen_tint
+            tint = shade_tint if wall.is_shaded else screen_tint
+            ray.draw_model(wall.model, VEC3_ZERO, 1.0, tint)
 
     def update_screen_tint(self):
         self.screen_tint = (
