@@ -86,6 +86,12 @@ class BSPTreeBuilder:
         node.splitter_p0 = splitter_pos[0]
         node.splitter_p1 = splitter_pos[1]
 
+        # Optimization: Cache scalar values to avoid vec2 lookups in BSP traverse loop
+        node.splitter_p0_x = splitter_pos[0].x
+        node.splitter_p0_y = splitter_pos[0].y
+        node.splitter_vec_x = splitter_vec.x
+        node.splitter_vec_y = splitter_vec.y
+
         front_segs, back_segs = [], []
 
         for segment in input_segments[1:]:
