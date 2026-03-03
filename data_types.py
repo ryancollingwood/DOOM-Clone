@@ -60,5 +60,11 @@ class BSPNode:
         self.splitter_p0: vec2 = None
         self.splitter_p1: vec2 = None
         self.splitter_vec: vec2 = None
+
+        # Unpacked scalar coordinates to avoid vec2 object lookups in tight loop (BSPTreeTraverser)
+        self.splitter_p0_x: float = None
+        self.splitter_p0_y: float = None
+        self.splitter_vec_x: float = None
+        self.splitter_vec_y: float = None
         #
         self.segment_id: int = None
