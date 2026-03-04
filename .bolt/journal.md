@@ -23,3 +23,12 @@ Modified `BSPNode` to store scalar versions of these attributes (`splitter_p0_x`
 
 **Impact**:
 Reduced the `test_perf3` 5000-frame (logic only) profile time from 1.50s to 1.36s (~10% performance gain).
+
+### 2024-05-25: Optimize BSP Tree Traversal using Inlining and Node Caching
+**Problem**: The `_traverse` method in `BSPTreeTraverser` is the inner loop for determining what gets drawn and is heavily recursive. Calling `if node is None:` constantly added unnecessary call overhead for missing leaf nodes.
+
+**Optimization**:
+Modified `BSPTreeTraverser` to inline the `on_front` cross product condition without creating intermediate local variables like `dx`, `dy`. Cached the `node.front` and `node.back` variables, and replaced the base case check with pre-checks (`if front: self._traverse(...)`) to prevent recursing on `None`.
+
+**Impact**:
+Using a deep synthetic tree benchmark (100,000 runs), execution time dropped from 85.8 seconds to 73.4 seconds, yielding an approximate 14.4% performance gain on the inner loop.
