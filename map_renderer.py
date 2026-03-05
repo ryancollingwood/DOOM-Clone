@@ -73,12 +73,30 @@ class MapRenderer:
             (x0, y0), (x1, y1) = p0, p1
             ray.draw_line_v((x0, y0), (x1, y1), ray.DARKGRAY)
 
-    def remap_array(self, arr: list[tuple[vec2]]):
-        return [(self.remap_vec2(p0), self.remap_vec2(p1)) for p0, p1 in arr]
+    def remap_array(self, arr: list[tuple[vec2]], out_min=MAP_OFFSET):
+        # Optimization: Pre-calculate constants to avoid repeated math
+        x_min, x_max = self.x_min, self.x_max
+        y_min, y_max = self.y_min, self.y_max
 
-    def remap_vec2(self, p: vec2):
-        x = self.remap_x(p.x)
-        y = self.remap_y(p.y)
+        # Prevent division by zero if bounds are equal
+        dx = x_max - x_min
+        dy = y_max - y_min
+
+        cx = (self.x_out_max - out_min) / dx if dx else 0
+        cy = (self.y_out_max - out_min) / dy if dy else 0
+
+        res = []
+        append = res.append
+        for p0, p1 in arr:
+            # Inline function calls and math for mapping points
+            np0 = vec2((p0.x - x_min) * cx + out_min, (p0.y - y_min) * cy + out_min)
+            np1 = vec2((p1.x - x_min) * cx + out_min, (p1.y - y_min) * cy + out_min)
+            append((np0, np1))
+        return res
+
+    def remap_vec2(self, p: vec2, out_min=MAP_OFFSET):
+        x = (p.x - self.x_min) * (self.x_out_max - out_min) / (self.x_max - self.x_min) + out_min
+        y = (p.y - self.y_min) * (self.y_out_max - out_min) / (self.y_max - self.y_min) + out_min
         return vec2(x, y)
 
     def remap_x(self, x, out_min=MAP_OFFSET):

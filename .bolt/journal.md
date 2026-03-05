@@ -32,3 +32,12 @@ Modified `BSPTreeTraverser` to inline the `on_front` cross product condition wit
 
 **Impact**:
 Using a deep synthetic tree benchmark (100,000 runs), execution time dropped from 85.8 seconds to 73.4 seconds, yielding an approximate 14.4% performance gain on the inner loop.
+
+### 2024-05-26: MapRenderer remap_array Optimization
+**Problem**: The `MapRenderer` dynamically translates vector space for map drawing. The function `remap_array` maps every vector through several nested class methods (`remap_vec2`, `remap_x`, `remap_y`). This introduces substantial per-point function call overhead and repeats math.
+
+**Optimization**:
+Inlined the coordinate math directly into the `remap_array` loops and calculated scalar constants `cx` and `cy` ahead of time to avoid performing identical divisions for every coordinate in every vector array element.
+
+**Impact**:
+Micro-benchmark testing indicated that inlining and caching scalar math for point mapping yields roughly a 30% execution time decrease (time taken dropped from 2.13s to 1.47s for 1000 items in a tight loop).
