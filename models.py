@@ -140,11 +140,14 @@ class FlatModel:
 
     def get_indices(self, triangles, outline_verts):
         indices = []
+        # Optimization: Pre-computed dictionary mapping vertices to their index.
+        # This reduces membership lookup complexity from O(N) to O(1) inside the loop.
+        vert_index_map = {vert: i for i, vert in enumerate(outline_verts)}
         for triangle in triangles:
             vertices = triangle.vertices[::-1] if self.is_floor else triangle.vertices
             # vertices = triangle.vertices
             for v in vertices:
-                indices.append(outline_verts.index((v.x, v.y)))
+                indices.append(vert_index_map[(v.x, v.y)])
         return indices
 
     def get_vertices(self, outline_verts):

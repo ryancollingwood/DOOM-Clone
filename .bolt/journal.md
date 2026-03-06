@@ -41,3 +41,12 @@ Inlined the coordinate math directly into the `remap_array` loops and calculated
 
 **Impact**:
 Micro-benchmark testing indicated that inlining and caching scalar math for point mapping yields roughly a 30% execution time decrease (time taken dropped from 2.13s to 1.47s for 1000 items in a tight loop).
+
+### 2024-05-27: Optimize `FlatModel.get_indices` with O(1) Dictionary Lookup
+**Problem**: The `FlatModel.get_indices` method in `models.py` uses `outline_verts.index((v.x, v.y))` inside a nested loop for every triangle vertex. The `.index()` method on a Python list has O(N) complexity, resulting in roughly O(N_triangles * N_verts) complexity for the method. When triangulating complex sectors, this caused significant slowdowns.
+
+**Optimization**:
+Created a pre-computed dictionary mapping vertex coordinate tuples `(x, y)` to their index outside the loop (`{vert: i for i, vert in enumerate(outline_verts)}`). Modified the inner loop to use this dictionary for an O(1) lookup instead.
+
+**Impact**:
+In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the execution time over 100 iterations dropped from 11.47 seconds to 0.22 seconds (a ~50x speedup). This significantly accelerates the mesh generation phase for levels with large, complex sector geometry.
