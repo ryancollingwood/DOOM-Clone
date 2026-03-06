@@ -1,6 +1,5 @@
 from settings import *
 from data_types import BSPNode, Segment
-from utils import is_on_front
 
 
 class BSPTreeTraverser:
@@ -18,21 +17,23 @@ class BSPTreeTraverser:
     def update(self):
         self.seg_ids_to_draw.clear()
         self.masked_seg_ids_to_draw.clear()
-        self.traverse(self.root_node)
+        px, py = self.pos_2d.x, self.pos_2d.y
+        self.traverse(self.root_node, px, py)
 
-    def traverse(self, node: BSPNode):
+    def traverse(self, node: BSPNode, px, py):
         if node is None:
             return None
 
-        on_front = is_on_front(self.pos_2d - node.splitter_p0, node.splitter_vec)
+        on_front = (px - node.splitter_p0.x) * node.splitter_vec.y < \
+                   node.splitter_vec.x * (py - node.splitter_p0.y)
         #
         if on_front:
-            self.traverse(node.front)
+            self.traverse(node.front, px, py)
             #
             self.seg_ids_to_draw.append(node.segment_id)
             #
-            self.traverse(node.back)
+            self.traverse(node.back, px, py)
         else:
-            self.traverse(node.back)
+            self.traverse(node.back, px, py)
             #
-            self.traverse(node.front)
+            self.traverse(node.front, px, py)
