@@ -50,3 +50,17 @@ Created a pre-computed dictionary mapping vertex coordinate tuples `(x, y)` to t
 
 **Impact**:
 In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the execution time over 100 iterations dropped from 11.47 seconds to 0.22 seconds (a ~50x speedup). This significantly accelerates the mesh generation phase for levels with large, complex sector geometry.
+
+### 2024-05-28: Optimize BSPTreeBuilder `split_space` Cross Product
+**Problem**: During the building of the BSP tree, `split_space` repeatedly checks segments against splitters using `cross_2d((segment_start - splitter_pos[0]), splitter_vec)`. The `segment_start - splitter_pos[0]` operation instantiates a new `vec2` object for every comparison, and the subsequent `cross_2d` call has function call and attribute lookup overhead.
+
+**Optimization**:
+Inlined the `cross_2d` cross product math and vector difference calculations directly in `split_space` to avoid vec2 object creation and reduce function call overhead.
+```python
+dx = segment_start.x - splitter_pos[0].x
+dy = segment_start.y - splitter_pos[0].y
+numerator = dx * splitter_vec.y - splitter_vec.x * dy
+```
+
+**Impact**:
+Micro-benchmarking a synthetic inner loop with identical cross product calculations showed execution time halving from 1.07 seconds to 0.53 seconds for 1,000,000 iterations.

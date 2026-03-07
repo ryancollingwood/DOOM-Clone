@@ -100,8 +100,14 @@ class BSPTreeBuilder:
             segment_end = segment.pos[1]
             segment_vector = segment.vector
 
-            numerator = cross_2d((segment_start - splitter_pos[0]), splitter_vec)
-            denominator = cross_2d(splitter_vec, segment_vector)
+            # Optimization: Inline the cross product calculation to avoid vec2 object creation and function call overhead
+            dx = segment_start.x - splitter_pos[0].x
+            dy = segment_start.y - splitter_pos[0].y
+            numerator = dx * splitter_vec.y - splitter_vec.x * dy
+
+            v_dx = segment_vector.x
+            v_dy = segment_vector.y
+            denominator = splitter_vec.x * v_dy - v_dx * splitter_vec.y
 
             # if the denominator is zero the lines are parallel
             denominator_is_zero = abs(denominator) < EPS
