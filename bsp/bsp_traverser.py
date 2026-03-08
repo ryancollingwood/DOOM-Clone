@@ -25,21 +25,14 @@ class BSPTreeTraverser:
             self._traverse(node, self.pos_2d.x, self.pos_2d.y, self.seg_ids_to_draw.append)
 
     def _traverse(self, node: BSPNode, x: float, y: float, append_seg_id):
-        # Inline is_on_front logic with scalars to avoid vec2 object creation in tight loop
-        # Cache node.front and node.back to avoid repeated attribute lookups
-        front = node.front
-        back = node.back
-
-        on_front = (x - node.splitter_p0_x) * node.splitter_vec_y < node.splitter_vec_x * (y - node.splitter_p0_y)
-
-        # Pre-check for None to avoid function call overhead
-        if on_front:
-            if front: self._traverse(front, x, y, append_seg_id)
+        # Inline is_on_front logic with scalars and eliminate local variable creation overhead in tight loop
+        if (x - node.splitter_p0_x) * node.splitter_vec_y < node.splitter_vec_x * (y - node.splitter_p0_y):
+            if node.front is not None: self._traverse(node.front, x, y, append_seg_id)
             #
             append_seg_id(node.segment_id)
             #
-            if back: self._traverse(back, x, y, append_seg_id)
+            if node.back is not None: self._traverse(node.back, x, y, append_seg_id)
         else:
-            if back: self._traverse(back, x, y, append_seg_id)
+            if node.back is not None: self._traverse(node.back, x, y, append_seg_id)
             #
-            if front: self._traverse(front, x, y, append_seg_id)
+            if node.front is not None: self._traverse(node.front, x, y, append_seg_id)
