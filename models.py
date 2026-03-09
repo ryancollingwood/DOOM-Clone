@@ -231,25 +231,30 @@ class WallModel:
 
     def get_wall_height_data(self):
         front_sector = self.sectors[self.segment.sector_id]
+        wall_type = self.wall_type
         #
-        if self.wall_type == WallType.SOLID:
+        if wall_type == WallType.SOLID:
             bottom, top = front_sector.floor_h, front_sector.ceil_h
             return bottom, top
         #
         back_sector = self.sectors[self.segment.back_sector_id]
         #
-        if self.wall_type == WallType.PORTAL_LO:
+        if wall_type == WallType.PORTAL_LO:
             bottom, top = front_sector.floor_h, back_sector.floor_h
-        elif self.wall_type == WallType.PORTAL_UP:
+        elif wall_type == WallType.PORTAL_UP:
             bottom, top = front_sector.ceil_h, back_sector.ceil_h
-        elif self.wall_type == WallType.PORTAL_MID:
-            bottom, top = (
-                max(front_sector.floor_h, back_sector.floor_h),
-                min(front_sector.ceil_h, back_sector.ceil_h)
-            )
+        elif wall_type == WallType.PORTAL_MID:
+            # Optimization: Replace min/max function calls with faster inline ternary conditional expressions
+            f_floor = front_sector.floor_h
+            b_floor = back_sector.floor_h
+            bottom = f_floor if f_floor > b_floor else b_floor
+
+            f_ceil = front_sector.ceil_h
+            b_ceil = back_sector.ceil_h
+            top = f_ceil if f_ceil < b_ceil else b_ceil
         #
-        bottom, top = min(bottom, top), max(top, bottom)
-        return bottom, top
+        # Ensure bottom is less than top without incurring min/max function call overhead
+        return (bottom, top) if bottom < top else (top, bottom)
 
     def get_quad_mesh(self) -> ray.Mesh:
         triangle_count = 2
