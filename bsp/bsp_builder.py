@@ -94,23 +94,36 @@ class BSPTreeBuilder:
 
         front_segs, back_segs = [], []
 
+        # Optimization: cache frequently called list.append methods to avoid attribute lookup overhead
+        append_front = front_segs.append
+        append_back = back_segs.append
+
         for segment in input_segments[1:]:
             #
             segment_start = segment.pos[0]
             segment_end = segment.pos[1]
             segment_vector = segment.vector
 
-            numerator = cross_2d((segment_start - splitter_pos[0]), splitter_vec)
-            denominator = cross_2d(splitter_vec, segment_vector)
+            # Optimization: Inline cross_2d and scalar mathematical evaluation to avoid function call
+            # and new object (vec2) creation overheads for each segment in the recursive loop.
+            dx = segment_start.x - node.splitter_p0_x
+            dy = segment_start.y - node.splitter_p0_y
+
+            numerator = dx * node.splitter_vec_y - node.splitter_vec_x * dy
+            denominator = node.splitter_vec_x * segment_vector.y - segment_vector.x * node.splitter_vec_y
+
+            # Optimization: Avoid abs() function call overhead using inline conditional expressions
+            abs_denom = denominator if denominator >= 0 else -denominator
+            abs_num = numerator if numerator >= 0 else -numerator
 
             # if the denominator is zero the lines are parallel
-            denominator_is_zero = abs(denominator) < EPS
+            denominator_is_zero = abs_denom < EPS
 
             # segments are collinear if they are parallel and the numerator is zero
-            numerator_is_zero = abs(numerator) < EPS
+            numerator_is_zero = abs_num < EPS
             #
             if denominator_is_zero and numerator_is_zero:
-                front_segs.append(segment)
+                append_front(segment)
                 continue
 
             if not denominator_is_zero:
@@ -134,15 +147,15 @@ class BSPTreeBuilder:
                     if numerator > 0:
                         l_segment, r_segment = r_segment, l_segment
                     #
-                    front_segs.append(r_segment)
-                    back_segs.append(l_segment)
+                    append_front(r_segment)
+                    append_back(l_segment)
                     continue
 
             if numerator < 0 or (numerator_is_zero and denominator > 0):
-                front_segs.append(segment)
+                append_front(segment)
             #
             elif numerator > 0 or (numerator_is_zero and denominator < 0):
-                back_segs.append(segment)
+                append_back(segment)
 
         self.add_segment(splitter_seg, node)
         return front_segs, back_segs
