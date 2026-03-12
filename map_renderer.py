@@ -110,12 +110,27 @@ class MapRenderer:
     @staticmethod
     def get_bounds(segments: list[tuple[vec2]]):
         inf = float('inf')
+
+        if not segments:
+            return inf, inf, -inf, -inf
+
         x_min, y_min, x_max, y_max = inf, inf, -inf, -inf
-        #
+
+        # Optimization: Unpack vec2 attributes into local variables and use simple
+        # 'if' branches instead of chained nested ternary operators to avoid
+        # repeated attribute lookups and complex branching overhead.
         for p0, p1 in segments:
-            x_min = p0.x if p0.x < x_min else p1.x if p1.x < x_min else x_min
-            x_max = p0.x if p0.x > x_max else p1.x if p1.x > x_max else x_max
-            #
-            y_min = p0.y if p0.y < y_min else p1.y if p1.y < y_min else y_min
-            y_max = p0.y if p0.y > y_max else p1.y if p1.y > y_max else y_max
+            p0x, p0y = p0.x, p0.y
+            p1x, p1y = p1.x, p1.y
+
+            if p0x < x_min: x_min = p0x
+            if p1x < x_min: x_min = p1x
+            if p0x > x_max: x_max = p0x
+            if p1x > x_max: x_max = p1x
+
+            if p0y < y_min: y_min = p0y
+            if p1y < y_min: y_min = p1y
+            if p0y > y_max: y_max = p0y
+            if p1y > y_max: y_max = p1y
+
         return x_min, y_min, x_max, y_max
