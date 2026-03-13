@@ -51,7 +51,7 @@ class Segment:
         self.up_tex_id: int = up_tex_id
         #
         self.wall_model_ids: set[int] = set()
-        self.mid_wall_models: dict = {}
+        self.mid_wall_models: list = []
         self.other_wall_models: list = []
         #
         self.has_portal_low: bool = True

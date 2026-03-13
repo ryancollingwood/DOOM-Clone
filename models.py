@@ -69,7 +69,7 @@ class Models:
         #
         segment.wall_model_ids.add(self.wall_id)
         if wall_model.wall_type == WallType.PORTAL_MID:
-            segment.mid_wall_models[self.wall_id] = wall_model
+            segment.mid_wall_models.append(wall_model)
         else:
             segment.other_wall_models.append(wall_model)
         self.wall_id += 1
