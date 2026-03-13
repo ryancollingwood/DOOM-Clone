@@ -18,7 +18,10 @@ class ViewRenderer:
         self.flat_models = self.models.flat_models
         #
         self.walls_to_draw = set()
-        self.mid_walls_to_draw = {}  # as ordered set
+        # Optimization: mid_walls_to_draw uses a list (instead of dict) to preserve insertion order
+        # (for Painter's algorithm transparency) while being much faster to populate via .extend()
+        # Deduplication of shared wall collections is already handled by tracking `processed_mid`.
+        self.mid_walls_to_draw = []
         #
         self.screen_tint = WHITE_COLOR
 
@@ -36,7 +39,7 @@ class ViewRenderer:
 
             mid_id = id(seg.mid_wall_models)
             if mid_id not in processed_mid:
-                self.mid_walls_to_draw.update(seg.mid_wall_models)
+                self.mid_walls_to_draw.extend(seg.mid_wall_models)
                 processed_mid.add(mid_id)
 
             other_id = id(seg.other_wall_models)
@@ -62,7 +65,7 @@ class ViewRenderer:
             ray.draw_model(wall.model, VEC3_ZERO, 1.0, tint)
 
         # draw portal_mid walls from back to front
-        for wall in reversed(self.mid_walls_to_draw.values()):
+        for wall in reversed(self.mid_walls_to_draw):
             tint = shade_tint if wall.is_shaded else screen_tint
             ray.draw_model(wall.model, VEC3_ZERO, 1.0, tint)
 
