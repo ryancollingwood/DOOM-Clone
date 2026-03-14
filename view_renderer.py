@@ -49,22 +49,25 @@ class ViewRenderer:
         screen_tint = self.screen_tint
         shade_tint = SHADING_DARK_COLOR if self.map_renderer.should_draw else SHADING_COLOR
 
+        # Optimization: Alias ray.draw_model and VEC3_ZERO locally to bypass O(N) global/attribute lookups.
+        # Inline the tint calculation directly into the function call to avoid intermediate variable assignment overhead.
+        draw_model = ray.draw_model
+        v_zero = VEC3_ZERO
+
         # draw flats
         for sec_id in self.sectors:
             #
             floor, ceil = self.flat_models[sec_id]
-            ray.draw_model(ceil.model, VEC3_ZERO, 1.0, screen_tint)
-            ray.draw_model(floor.model, VEC3_ZERO, 1.0, screen_tint)
+            draw_model(ceil.model, v_zero, 1.0, screen_tint)
+            draw_model(floor.model, v_zero, 1.0, screen_tint)
 
         # draw walls
         for wall in self.walls_to_draw:
-            tint = shade_tint if wall.is_shaded else screen_tint
-            ray.draw_model(wall.model, VEC3_ZERO, 1.0, tint)
+            draw_model(wall.model, v_zero, 1.0, shade_tint if wall.is_shaded else screen_tint)
 
         # draw portal_mid walls from back to front
         for wall in reversed(self.mid_walls_to_draw.values()):
-            tint = shade_tint if wall.is_shaded else screen_tint
-            ray.draw_model(wall.model, VEC3_ZERO, 1.0, tint)
+            draw_model(wall.model, v_zero, 1.0, shade_tint if wall.is_shaded else screen_tint)
 
     def update_screen_tint(self):
         self.screen_tint = (
