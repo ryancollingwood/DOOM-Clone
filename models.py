@@ -213,15 +213,19 @@ class WallModel:
         return model
 
     def get_texture(self):
-        if self.wall_type in {WallType.SOLID, WallType.PORTAL_MID}:
-            tex_id = [tex := self.segment.mid_tex_id, 0][tex is None]
-        #
-        elif self.wall_type == WallType.PORTAL_LO:
-            tex_id = [tex := self.segment.low_tex_id, 0][tex is None]
-        #
-        elif self.wall_type == WallType.PORTAL_UP:
-            tex_id = [tex := self.segment.up_tex_id, 0][tex is None]
-        #
+        # Optimization: Replaced slow list indexing hack with direct attribute access
+        # and simple conditionals to avoid unnecessary list allocation and walrus ops.
+        wall_type = self.wall_type
+        if wall_type == WallType.PORTAL_LO:
+            tex_id = self.segment.low_tex_id
+        elif wall_type == WallType.PORTAL_UP:
+            tex_id = self.segment.up_tex_id
+        else:
+            tex_id = self.segment.mid_tex_id
+
+        if tex_id is None:
+            tex_id = 0
+
         return self.textures.walls[tex_id]
 
     def get_shading(self):
