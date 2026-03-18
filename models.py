@@ -100,18 +100,29 @@ class FlatModel:
         return model
 
     def get_outline(self, sector_segments):
-        segs = sector_segments.copy()
-        #
-        outline = [segs[0][0]]
-        i = 0
-        while len(outline) != len(segs) + 1:
-            seg = segs[i]
-            #
-            if outline[-1] in seg:
-                point = seg[1] if outline[-1] == seg[0] else seg[0]
-                outline.append(point)
-            i = (i + 1) % len(segs)
-            #
+        # Optimization: Build a graph mapping vertices to neighbors to find connections in O(1)
+        # instead of searching the entire segment list in O(N) at each step.
+        graph = {}
+        for p0, p1 in sector_segments:
+            if p0 not in graph:
+                graph[p0] = []
+            if p1 not in graph:
+                graph[p1] = []
+            graph[p0].append(p1)
+            graph[p1].append(p0)
+
+        start = sector_segments[0][0]
+        outline = [start]
+        curr = start
+        prev = None
+
+        while len(outline) <= len(sector_segments):
+            neighbors = graph[curr]
+            next_node = neighbors[0] if neighbors[0] != prev else neighbors[1]
+            outline.append(next_node)
+            prev = curr
+            curr = next_node
+
         return outline[:-1]
 
     def get_triangles(self):
