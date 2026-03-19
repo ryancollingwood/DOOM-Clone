@@ -100,18 +100,32 @@ class FlatModel:
         return model
 
     def get_outline(self, sector_segments):
-        segs = sector_segments.copy()
-        #
-        outline = [segs[0][0]]
-        i = 0
-        while len(outline) != len(segs) + 1:
-            seg = segs[i]
-            #
-            if outline[-1] in seg:
-                point = seg[1] if outline[-1] == seg[0] else seg[0]
-                outline.append(point)
-            i = (i + 1) % len(segs)
-            #
+        # Optimization: Dictionary-based adjacency graph reduces time complexity from O(N^2) to O(N).
+        # Using an explicit adjacency dictionary removes the need to repeatedly search the entire list
+        # of segments for a matching point, drastically speeding up sequential vertex generation.
+        adj = {}
+        for p0, p1 in sector_segments:
+            if p0 in adj:
+                adj[p0].append(p1)
+            else:
+                adj[p0] = [p1]
+            if p1 in adj:
+                adj[p1].append(p0)
+            else:
+                adj[p1] = [p0]
+
+        start = sector_segments[0][0]
+        outline = [start]
+        prev = None
+        curr = start
+
+        while len(outline) != len(sector_segments) + 1:
+            neighbors = adj[curr]
+            next_node = neighbors[0] if neighbors[0] != prev else neighbors[1]
+            outline.append(next_node)
+            prev = curr
+            curr = next_node
+
         return outline[:-1]
 
     def get_triangles(self):
