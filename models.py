@@ -277,13 +277,17 @@ class WallModel:
         # get seg coords
         (x0, z0), (x1, z1) = self.segment.pos
 
+        # Optimization: Manually compute coordinate differences and hypotenuse to avoid
+        # intermediate vec3 object allocations and function call overhead from glm.length.
+        dx = x1 - x0
+        dz = z1 - z0
+
         # get normals
-        delta = vec3(x1, 0, z1) - vec3(x0, 0, z0)
-        normal = glm.normalize(vec3(-delta.z, delta.y, delta.x))
+        normal = glm.normalize(vec3(-dz, 0, dx))
         normals = glm.array([normal] * vertex_count)
 
         # get tex coords
-        width = glm.length(delta)
+        width = (dx * dx + dz * dz) ** 0.5
         #
         bottom, top = self.get_wall_height_data()
         # '-bottom, -top' - flip texture along Y axis
