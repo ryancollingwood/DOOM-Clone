@@ -85,14 +85,16 @@ class MapRenderer:
         cx = (self.x_out_max - out_min) / dx if dx else 0
         cy = (self.y_out_max - out_min) / dy if dy else 0
 
-        res = []
-        append = res.append
-        for p0, p1 in arr:
-            # Inline function calls and math for mapping points
-            np0 = vec2((p0.x - x_min) * cx + out_min, (p0.y - y_min) * cy + out_min)
-            np1 = vec2((p1.x - x_min) * cx + out_min, (p1.y - y_min) * cy + out_min)
-            append((np0, np1))
-        return res
+        # Optimization: Calculate offset constants once to avoid repeating subtraction and multiplication for every point
+        ox = out_min - x_min * cx
+        oy = out_min - y_min * cy
+
+        # Optimization: Use list comprehensions for faster list construction without the overhead of `.append()` in a loop.
+        return [
+            (vec2(p0.x * cx + ox, p0.y * cy + oy),
+             vec2(p1.x * cx + ox, p1.y * cy + oy))
+            for p0, p1 in arr
+        ]
 
     def remap_vec2(self, p: vec2, out_min=MAP_OFFSET):
         x = (p.x - self.x_min) * (self.x_out_max - out_min) / (self.x_max - self.x_min) + out_min
