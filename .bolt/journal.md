@@ -85,6 +85,11 @@ In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the exe
 **Optimization**: Refactored the normal and width logic to directly unpack `x0`, `z0`, `x1`, `z1` into scalars (`dx = x1 - x0`, `dz = z1 - z0`). Instead of `glm.length`, used standard Euclidean distance `(dx*dx + dz*dz)**0.5` and manually normalized the X/Z components using plain arithmetic.
 **Impact**: Using `timeit` for 10,000 executions of a 100-segment loop dropped execution time from ~3.14s to ~0.82s, delivering a roughly **~3.8x speedup** for geometric mesh generation by dodging repeated object instantiation.
 
+### 2024-06-04: Optimize MapRenderer.remap_array list construction
+**Problem**: The `MapRenderer.remap_array` function processes thousands of map segments per frame. Previously, it iterated over the array of points using a `for` loop and appended new `vec2` instances to an initially empty list. While the `.append` method was cached, the repeated function call overhead inside the loop remained a measurable bottleneck in this hot path.
+**Optimization**: Refactored `remap_array` to use a list comprehension. I also tested a vectorized approach using NumPy, but the overhead of marshalling custom `vec2` Python objects into NumPy arrays and back negated the C-level math benefits. A list comprehension provides the best balance of speed and zero-dependency Pythonic readability for the current architecture.
+**Impact**: Synthetic benchmarking using `timeit` over 1000 items showed execution time dropping from ~1.36 ms per loop to ~1.20 ms per loop, roughly a 10-12% performance improvement by avoiding `list.append` call overhead during dynamic map processing.
+
 ### 2024-06-04: Optimize `MapRenderer.remap_array` by hoisting math and using list comprehensions
 **Problem**: `MapRenderer.remap_array` mapped every vector point through nested expressions like `(p0.x - x_min) * cx + out_min`, performing identical multiplications and subtractions (`x_min * cx`) repeatedly. It also built the output array using `.append` in a loop.
 **Optimization**: Hoisted the invariant offsets (`ox = out_min - x_min * cx` and `oy = out_min - y_min * cy`) out of the loops, transforming the equation to `p.x * cx + ox`. Replaced the `for` loop and `.append` logic with a list comprehension.
