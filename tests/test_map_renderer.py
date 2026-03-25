@@ -44,21 +44,22 @@ def test_remap_array():
     renderer.x_max, renderer.y_max = 100, 100
     renderer.x_out_max, renderer.y_out_max = 800, 600
 
-    arr = [
-        (DummyVec2(0, 0), DummyVec2(50, 50)),
-        (DummyVec2(100, 100), DummyVec2(100, 0)),
-    ]
+    import numpy as np
+    arr = np.array([
+        [[0.0, 0.0], [50.0, 50.0]],
+        [[100.0, 100.0], [100.0, 0.0]],
+    ])
 
     remapped = renderer.remap_array(arr)
 
-    assert remapped[0][0].x == pytest.approx(10)
-    assert remapped[0][0].y == pytest.approx(10)
+    assert remapped[0][0][0] == pytest.approx(10)
+    assert remapped[0][0][1] == pytest.approx(10)
 
-    assert remapped[0][1].x == pytest.approx(405)
-    assert remapped[0][1].y == pytest.approx(305)
+    assert remapped[0][1][0] == pytest.approx(405)
+    assert remapped[0][1][1] == pytest.approx(305)
 
-    assert remapped[1][0].x == pytest.approx(800)
-    assert remapped[1][0].y == pytest.approx(600)
+    assert remapped[1][0][0] == pytest.approx(800)
+    assert remapped[1][0][1] == pytest.approx(600)
 
-    assert remapped[1][1].x == pytest.approx(800)
-    assert remapped[1][1].y == pytest.approx(10)
+    assert remapped[1][1][0] == pytest.approx(800)
+    assert remapped[1][1][1] == pytest.approx(10)
