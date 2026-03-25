@@ -85,13 +85,14 @@ class MapRenderer:
         cx = (self.x_out_max - out_min) / dx if dx else 0
         cy = (self.y_out_max - out_min) / dy if dy else 0
 
-        # Optimization: Use a list comprehension instead of appending to a list in a loop
-        # to avoid method lookup and function call overhead, yielding faster list construction.
+        # Optimization: Calculate offset constants once to avoid repeating subtraction and multiplication for every point
+        ox = out_min - x_min * cx
+        oy = out_min - y_min * cy
+
+        # Optimization: Use list comprehensions for faster list construction without the overhead of `.append()` in a loop.
         return [
-            (
-                vec2((p0.x - x_min) * cx + out_min, (p0.y - y_min) * cy + out_min),
-                vec2((p1.x - x_min) * cx + out_min, (p1.y - y_min) * cy + out_min)
-            )
+            (vec2(p0.x * cx + ox, p0.y * cy + oy),
+             vec2(p1.x * cx + ox, p1.y * cy + oy))
             for p0, p1 in arr
         ]
 
