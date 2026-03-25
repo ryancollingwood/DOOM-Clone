@@ -41,10 +41,16 @@ class MapRenderer:
 
     def draw_player(self, dist=100):
         x0, y0 = p0 = self.remap_vec2(self.camera.pos_2d)
-        x1, y1 = p0 + self.camera.forward.xz * dist
+
+        # self.camera.forward is a vec3, we need x and z
+        fwd_x = self.camera.forward.x
+        fwd_z = self.camera.forward.z
+
+        x1 = x0 + fwd_x * dist
+        y1 = y0 + fwd_z * dist
         #
-        ray.draw_line_v((x0, y0), (x1, y1), ray.WHITE)
-        ray.draw_circle_v((x0, y0), 10, ray.GREEN)
+        ray.draw_line_v((float(x0), float(y0)), (float(x1), float(y1)), ray.WHITE)
+        ray.draw_circle_v((float(x0), float(y0)), 10, ray.GREEN)
 
     def draw_segments(self, seg_color=ray.ORANGE):
         segment_ids = self.engine.bsp_traverser.seg_ids_to_draw
@@ -118,10 +124,12 @@ class MapRenderer:
 
         return remapped
 
-    def remap_vec2(self, p: vec2, out_min=MAP_OFFSET):
-        x = (p.x - self.x_min) * (self.x_out_max - out_min) / (self.x_max - self.x_min) + out_min
-        y = (p.y - self.y_min) * (self.y_out_max - out_min) / (self.y_max - self.y_min) + out_min
-        return vec2(x, y)
+    def remap_vec2(self, p, out_min=MAP_OFFSET):
+        px = p.x if hasattr(p, 'x') else p[0]
+        py = p.y if hasattr(p, 'y') else p[1]
+        x = (px - self.x_min) * (self.x_out_max - out_min) / (self.x_max - self.x_min) + out_min
+        y = (py - self.y_min) * (self.y_out_max - out_min) / (self.y_max - self.y_min) + out_min
+        return np.array([x, y], dtype=np.float64)
 
     def remap_x(self, x, out_min=MAP_OFFSET):
         out_max = self.x_out_max

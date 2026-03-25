@@ -20,8 +20,9 @@ CAM_DIAG_MOVE_CORR = 1 / pow(2, 0.5)
 # frustum
 FOV_Y_DEG = 50
 
+import numpy as np
 #
-LIGHT_POS = vec2(-30)
+LIGHT_POS = np.array([-30.0, -30.0], dtype=np.float64)
 
 #
 VEC3_ZERO = ray.Vector3(0, 0, 0)
