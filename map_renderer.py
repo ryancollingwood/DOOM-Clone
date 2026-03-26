@@ -1,4 +1,5 @@
 from settings import *
+import numpy as np
 
 
 class MapRenderer:
@@ -6,7 +7,7 @@ class MapRenderer:
         self.engine = engine
         self.camera = engine.camera
         #
-        raw_segments = [seg.pos for seg in self.engine.level_data.raw_segments]
+        raw_segments = np.array([seg.pos for seg in self.engine.level_data.raw_segments])
         self.x_min, self.y_min, self.x_max, self.y_max = self.get_bounds(raw_segments)
         #
         self.x_out_max, self.y_out_max = self.get_map_bounds()
@@ -14,10 +15,10 @@ class MapRenderer:
         self.raw_segments = self.remap_array(raw_segments)
         #
         self.segments = self.remap_array(
-            [seg.pos for seg in self.engine.bsp_builder.segments])
+            np.array([seg.pos for seg in self.engine.bsp_builder.segments]))
 
         # Pre-calculate normals for segments to avoid redundant computation each frame
-        self.segment_normals = [self.calc_normal(p0, p1) for p0, p1 in self.segments]
+        self.segment_normals = self.calc_normals(self.segments)
 
         self.counter = 0.0
         #
@@ -40,40 +41,67 @@ class MapRenderer:
 
     def draw_player(self, dist=100):
         x0, y0 = p0 = self.remap_vec2(self.camera.pos_2d)
-        x1, y1 = p0 + self.camera.forward.xz * dist
+
+        # self.camera.forward is a vec3, we need x and z
+        fwd_x = self.camera.forward.x
+        fwd_z = self.camera.forward.z
+
+        x1 = x0 + fwd_x * dist
+        y1 = y0 + fwd_z * dist
         #
-        ray.draw_line_v((x0, y0), (x1, y1), ray.WHITE)
-        ray.draw_circle_v((x0, y0), 10, ray.GREEN)
+        ray.draw_line_v((float(x0), float(y0)), (float(x1), float(y1)), ray.WHITE)
+        ray.draw_circle_v((float(x0), float(y0)), 10, ray.GREEN)
 
     def draw_segments(self, seg_color=ray.ORANGE):
         segment_ids = self.engine.bsp_traverser.seg_ids_to_draw
         #
         for seg_id in segment_ids:
         # for seg_id in segment_ids[:int(self.counter) % (len(segment_ids) + 1)]:
-            (x0, y0), (x1, y1) = p0, p1 = self.segments[seg_id]
+            p0, p1 = self.segments[seg_id]
+            x0, y0 = p0
+            x1, y1 = p1
             #
-            ray.draw_line_v((x0, y0), (x1, y1), seg_color)
+            ray.draw_line_v((float(x0), float(y0)), (float(x1), float(y1)), seg_color)
 
             # Use pre-calculated normals
             n0, n1 = self.segment_normals[seg_id]
-            ray.draw_line_v((n0.x, n0.y), (n1.x, n1.y), seg_color)
+            ray.draw_line_v((float(n0[0]), float(n0[1])), (float(n1[0]), float(n1[1])), seg_color)
             #
-            ray.draw_circle_v((x0, y0), 2, ray.WHITE)
-            ray.draw_circle_v((x1, y1), 2, ray.WHITE)
+            ray.draw_circle_v((float(x0), float(y0)), 2, ray.WHITE)
+            ray.draw_circle_v((float(x1), float(y1)), 2, ray.WHITE)
 
-    def calc_normal(self, p0, p1, scale=10):
+    def calc_normals(self, segments, scale=10):
+        if len(segments) == 0:
+            return np.array([])
+        p0 = segments[:, 0, :]
+        p1 = segments[:, 1, :]
         p10 = p1 - p0
-        normal = normalize(vec2(-p10.y, p10.x))
+        normals = np.empty_like(p10)
+        normals[:, 0] = -p10[:, 1]
+        normals[:, 1] = p10[:, 0]
+
+        # normalize
+        lengths = np.linalg.norm(normals, axis=1, keepdims=True)
+        # Avoid division by zero
+        lengths[lengths == 0] = 1.0
+        normals = normals / lengths
+
         n0 = (p0 + p1) * 0.5
-        n1 = n0 + normal * scale
-        return n0, n1
+        n1 = n0 + normals * scale
+
+        # return as an array of shape (N, 2, 2) where N is number of segments
+        return np.stack([n0, n1], axis=1)
 
     def draw_raw_segments(self):
         for p0, p1 in self.raw_segments:
-            (x0, y0), (x1, y1) = p0, p1
-            ray.draw_line_v((x0, y0), (x1, y1), ray.DARKGRAY)
+            x0, y0 = p0
+            x1, y1 = p1
+            ray.draw_line_v((float(x0), float(y0)), (float(x1), float(y1)), ray.DARKGRAY)
 
-    def remap_array(self, arr: list[tuple[vec2]], out_min=MAP_OFFSET):
+    def remap_array(self, arr: np.ndarray, out_min=MAP_OFFSET):
+        if len(arr) == 0:
+            return arr
+
         # Optimization: Pre-calculate constants to avoid repeated math
         x_min, x_max = self.x_min, self.x_max
         y_min, y_max = self.y_min, self.y_max
@@ -89,17 +117,19 @@ class MapRenderer:
         ox = out_min - x_min * cx
         oy = out_min - y_min * cy
 
-        # Optimization: Use list comprehensions for faster list construction without the overhead of `.append()` in a loop.
-        return [
-            (vec2(p0.x * cx + ox, p0.y * cy + oy),
-             vec2(p1.x * cx + ox, p1.y * cy + oy))
-            for p0, p1 in arr
-        ]
+        # Vectorized mapping over numpy array
+        remapped = np.empty_like(arr)
+        remapped[:, :, 0] = arr[:, :, 0] * cx + ox
+        remapped[:, :, 1] = arr[:, :, 1] * cy + oy
 
-    def remap_vec2(self, p: vec2, out_min=MAP_OFFSET):
-        x = (p.x - self.x_min) * (self.x_out_max - out_min) / (self.x_max - self.x_min) + out_min
-        y = (p.y - self.y_min) * (self.y_out_max - out_min) / (self.y_max - self.y_min) + out_min
-        return vec2(x, y)
+        return remapped
+
+    def remap_vec2(self, p, out_min=MAP_OFFSET):
+        px = p.x if hasattr(p, 'x') else p[0]
+        py = p.y if hasattr(p, 'y') else p[1]
+        x = (px - self.x_min) * (self.x_out_max - out_min) / (self.x_max - self.x_min) + out_min
+        y = (py - self.y_min) * (self.y_out_max - out_min) / (self.y_max - self.y_min) + out_min
+        return np.array([x, y], dtype=np.float64)
 
     def remap_x(self, x, out_min=MAP_OFFSET):
         out_max = self.x_out_max
@@ -110,29 +140,16 @@ class MapRenderer:
         return (y - self.y_min) * (out_max - out_min) / (self.y_max - self.y_min) + out_min
 
     @staticmethod
-    def get_bounds(segments: list[tuple[vec2]]):
+    def get_bounds(segments: np.ndarray):
         inf = float('inf')
 
-        if not segments:
+        if len(segments) == 0:
             return inf, inf, -inf, -inf
 
-        x_min, y_min, x_max, y_max = inf, inf, -inf, -inf
-
-        # Optimization: Unpack vec2 attributes into local variables and use simple
-        # 'if' branches instead of chained nested ternary operators to avoid
-        # repeated attribute lookups and complex branching overhead.
-        for p0, p1 in segments:
-            p0x, p0y = p0.x, p0.y
-            p1x, p1y = p1.x, p1.y
-
-            if p0x < x_min: x_min = p0x
-            if p1x < x_min: x_min = p1x
-            if p0x > x_max: x_max = p0x
-            if p1x > x_max: x_max = p1x
-
-            if p0y < y_min: y_min = p0y
-            if p1y < y_min: y_min = p1y
-            if p0y > y_max: y_max = p0y
-            if p1y > y_max: y_max = p1y
+        # Optimization: Use numpy min/max over the whole array
+        x_min = np.min(segments[:, :, 0])
+        x_max = np.max(segments[:, :, 0])
+        y_min = np.min(segments[:, :, 1])
+        y_max = np.max(segments[:, :, 1])
 
         return x_min, y_min, x_max, y_max

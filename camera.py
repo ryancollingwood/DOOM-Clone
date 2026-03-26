@@ -12,7 +12,8 @@ class Camera:
         #
         self.target: ray.Vector3 = self.m_cam.target
         self.pos_3d: ray.Vector3 = self.m_cam.position
-        self.pos_2d: glm.vec2 = vec2(self.pos_3d.x, self.pos_3d.z)
+        import numpy as np
+        self.pos_2d: np.ndarray = np.array([self.pos_3d.x, self.pos_3d.z], dtype=np.float64)
         #
         self.speed = CAM_SPEED
         self.rot_speed = CAM_ROT_SPEED

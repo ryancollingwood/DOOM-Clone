@@ -22,7 +22,10 @@ class BSPTreeTraverser:
 
     def traverse(self, node: BSPNode):
         if node:
-            self._traverse(node, self.pos_2d.x, self.pos_2d.y, self.seg_ids_to_draw.append)
+            # pos_2d is likely still a vec2 or similar from settings/engine, but let's be safe
+            pos_x = self.pos_2d.x if hasattr(self.pos_2d, 'x') else self.pos_2d[0]
+            pos_y = self.pos_2d.y if hasattr(self.pos_2d, 'y') else self.pos_2d[1]
+            self._traverse(node, pos_x, pos_y, self.seg_ids_to_draw.append)
 
     def _traverse(self, node: BSPNode, x: float, y: float, append_seg_id):
         # Inline is_on_front logic with scalars to avoid vec2 object creation in tight loop

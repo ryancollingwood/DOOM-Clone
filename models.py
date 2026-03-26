@@ -105,16 +105,18 @@ class FlatModel:
         # of segments for a matching point, drastically speeding up sequential vertex generation.
         adj = {}
         for p0, p1 in sector_segments:
-            if p0 in adj:
-                adj[p0].append(p1)
+            p0_t = tuple(p0)
+            p1_t = tuple(p1)
+            if p0_t in adj:
+                adj[p0_t].append(p1_t)
             else:
-                adj[p0] = [p1]
-            if p1 in adj:
-                adj[p1].append(p0)
+                adj[p0_t] = [p1_t]
+            if p1_t in adj:
+                adj[p1_t].append(p0_t)
             else:
-                adj[p1] = [p0]
+                adj[p1_t] = [p0_t]
 
-        start = sector_segments[0][0]
+        start = tuple(sector_segments[0][0])
         outline = [start]
         prev = None
         curr = start
@@ -240,8 +242,14 @@ class WallModel:
 
     def get_shading(self):
         seg_vec = self.segment.pos[1] - self.segment.pos[0]
-        light_vec = LIGHT_POS - self.segment.pos[0]
-        return light_vec.x * seg_vec.y > light_vec.y * seg_vec.x
+        # light pos is a vec2 so we unpack x,y or index 0,1
+        light_x = LIGHT_POS.x if hasattr(LIGHT_POS, 'x') else LIGHT_POS[0]
+        light_y = LIGHT_POS.y if hasattr(LIGHT_POS, 'y') else LIGHT_POS[1]
+
+        light_vec_x = light_x - self.segment.pos[0][0]
+        light_vec_y = light_y - self.segment.pos[0][1]
+
+        return light_vec_x * seg_vec[1] > light_vec_y * seg_vec[0]
 
     def get_wall_height_data(self):
         front_sector = self.sectors[self.segment.sector_id]
@@ -280,8 +288,8 @@ class WallModel:
         # Optimization: Inlining scalar math (dx, dz) and (dx*dx + dz*dz)**0.5 avoids
         # function call overhead (glm.length, glm.normalize) and intermediate Python object
         # allocations (vec3) in this hot path, yielding roughly a ~3.8x speedup.
-        dx = x1 - x0
-        dz = z1 - z0
+        dx = float(x1 - x0)
+        dz = float(z1 - z0)
         width = (dx * dx + dz * dz) ** 0.5
 
         # get normals

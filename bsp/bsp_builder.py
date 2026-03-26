@@ -4,6 +4,7 @@ from utils import cross_2d
 from copy import copy
 import random
 import multiprocessing as mp
+import numpy as np
 
 
 class BSPTreeBuilder:
@@ -87,10 +88,10 @@ class BSPTreeBuilder:
         node.splitter_p1 = splitter_pos[1]
 
         # Optimization: Cache scalar values to avoid vec2 lookups in BSP traverse loop
-        node.splitter_p0_x = splitter_pos[0].x
-        node.splitter_p0_y = splitter_pos[0].y
-        node.splitter_vec_x = splitter_vec.x
-        node.splitter_vec_y = splitter_vec.y
+        node.splitter_p0_x = splitter_pos[0][0]
+        node.splitter_p0_y = splitter_pos[0][1]
+        node.splitter_vec_x = splitter_vec[0]
+        node.splitter_vec_y = splitter_vec[1]
 
         front_segs, back_segs = [], []
 
@@ -106,11 +107,11 @@ class BSPTreeBuilder:
 
             # Optimization: Inline cross_2d and scalar mathematical evaluation to avoid function call
             # and new object (vec2) creation overheads for each segment in the recursive loop.
-            dx = segment_start.x - node.splitter_p0_x
-            dy = segment_start.y - node.splitter_p0_y
+            dx = segment_start[0] - node.splitter_p0_x
+            dy = segment_start[1] - node.splitter_p0_y
 
             numerator = dx * node.splitter_vec_y - node.splitter_vec_x * dy
-            denominator = node.splitter_vec_x * segment_vector.y - segment_vector.x * node.splitter_vec_y
+            denominator = node.splitter_vec_x * segment_vector[1] - segment_vector[0] * node.splitter_vec_y
 
             # Optimization: Avoid abs() function call overhead using inline conditional expressions
             abs_denom = denominator if denominator >= 0 else -denominator
@@ -137,11 +138,11 @@ class BSPTreeBuilder:
                     intersection_point = segment_start + intersection * segment_vector
 
                     r_segment = copy(segment)
-                    r_segment.pos = segment_start, intersection_point
+                    r_segment.pos = np.array([segment_start, intersection_point], dtype=np.float64)
                     r_segment.vector = r_segment.pos[1] - r_segment.pos[0]
                     #
                     l_segment = copy(segment)
-                    l_segment.pos = intersection_point, segment_end
+                    l_segment.pos = np.array([intersection_point, segment_end], dtype=np.float64)
                     l_segment.vector = l_segment.pos[1] - l_segment.pos[0]
 
                     if numerator > 0:

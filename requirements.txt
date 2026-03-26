@@ -1,3 +1,4 @@
 raylib
 PyGLM
 sect
+numpy
