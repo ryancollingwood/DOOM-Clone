@@ -227,16 +227,18 @@ class WallModel:
         return model
 
     def get_texture(self):
-        if self.wall_type in {WallType.SOLID, WallType.PORTAL_MID}:
-            tex_id = [tex := self.segment.mid_tex_id, 0][tex is None]
+        # Optimization: Replaced obscure list indexing hacks and set membership tests
+        # with standard if/elif logic and local variable caching to avoid allocation
+        # overhead and improve readability in this heavily-called texture mapping path.
+        w_type = self.wall_type
+        if w_type == WallType.PORTAL_LO:
+            tex_id = self.segment.low_tex_id
+        elif w_type == WallType.PORTAL_UP:
+            tex_id = self.segment.up_tex_id
+        else:
+            tex_id = self.segment.mid_tex_id
         #
-        elif self.wall_type == WallType.PORTAL_LO:
-            tex_id = [tex := self.segment.low_tex_id, 0][tex is None]
-        #
-        elif self.wall_type == WallType.PORTAL_UP:
-            tex_id = [tex := self.segment.up_tex_id, 0][tex is None]
-        #
-        return self.textures.walls[tex_id]
+        return self.textures.walls[tex_id if tex_id is not None else 0]
 
     def get_shading(self):
         seg_vec = self.segment.pos[1] - self.segment.pos[0]
