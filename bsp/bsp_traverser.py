@@ -1,6 +1,5 @@
 from settings import *
-from data_types import BSPNode, Segment
-from utils import is_on_front
+from data_types import BSPNode
 
 
 class BSPTreeTraverser:
@@ -30,10 +29,10 @@ class BSPTreeTraverser:
         front = node.front
         back = node.back
 
-        on_front = (x - node.splitter_p0_x) * node.splitter_vec_y < node.splitter_vec_x * (y - node.splitter_p0_y)
-
-        # Pre-check for None to avoid function call overhead
-        if on_front:
+        # Pre-check for None to avoid function call overhead.
+        # Optimization: Evaluating the boolean directly in the if-condition without creating
+        # an intermediate local variable 'on_front' saves STORE_FAST/LOAD_FAST bytecode overhead.
+        if (x - node.splitter_p0_x) * node.splitter_vec_y < node.splitter_vec_x * (y - node.splitter_p0_y):
             if front: self._traverse(front, x, y, append_seg_id)
             #
             append_seg_id(node.segment_id)
