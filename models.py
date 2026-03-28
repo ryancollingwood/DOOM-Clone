@@ -184,9 +184,10 @@ class FlatModel:
         vertices = glm.array(vertices)
 
         # get tex coords
-        tex_coords = [glm.vec2(v) for v in sector_verts]
-        tex_coords = tex_coords if self.is_floor else [glm.vec2(v.x, -v.y) for v in tex_coords]
-        tex_coords = glm.array(tex_coords)
+        if self.is_floor:
+            tex_coords = glm.array([glm.vec2(v) for v in sector_verts])
+        else:
+            tex_coords = glm.array([glm.vec2(v.x, -v.y) for v in sector_verts])
 
         # get indices
         indices = self.get_indices(triangles, sector_verts)
@@ -290,22 +291,24 @@ class WallModel:
         else:
             nx, nz = -dz / width, dx / width
         normal = vec3(nx, 0, nz)
-        normals = glm.array([normal] * vertex_count)
+        # Optimization: Pass elements directly instead of allocating an intermediate list and doing list multiplication.
+        normals = glm.array([normal, normal, normal, normal])
 
         # get tex coords
         #
         bottom, top = self.get_wall_height_data()
         # '-bottom, -top' - flip texture along Y axis
-        uv0, uv1, uv2, uv3 = (0, -bottom), (width, -bottom), (width, -top), (0, -top)
-        tex_coords = glm.array([glm.vec2(v) for v in [uv0, uv1, uv2, uv3]])
+        nb, nt = -bottom, -top
+        # Optimization: Pass explicitly instantiated vec2 directly into glm.array to dodge repeated unpacks, tuples, and iterators
+        tex_coords = glm.array([glm.vec2(0, nb), glm.vec2(width, nb), glm.vec2(width, nt), glm.vec2(0, nt)])
 
         # get vertices
-        v0, v1, v2, v3 = (x0, bottom, z0), (x1, bottom, z1), (x1, top, z1), (x0, top, z0)
-        vertices = glm.array([vec3(v) for v in [v0, v1, v2, v3]])
+        # Optimization: Instantiate directly without temporary lists or loops.
+        vertices = glm.array([vec3(x0, bottom, z0), vec3(x1, bottom, z1), vec3(x1, top, z1), vec3(x0, top, z0)])
 
         # get indices
-        indices = [0, 1, 2, 0, 2, 3]
-        indices = glm.array.from_numbers(glm.uint16, *indices)
+        # Optimization: Call from_numbers directly instead of building a Python list and unpacking it
+        indices = glm.array.from_numbers(glm.uint16, 0, 1, 2, 0, 2, 3)
 
         # get mesh
         mesh = ray.Mesh()
