@@ -31,7 +31,8 @@ class Models:
             floor_model = FlatModel(self, sector_id)
             ceil_model = FlatModel(self, sector_id, is_floor=False)
             #
-            self.flat_models.extend([[floor_model, ceil_model]])
+            # Optimization: Using `list.append([item1, item2])` instead of `list.extend([[item1, item2]])` avoids allocating an intermediate list and reduces iteration overhead.
+            self.flat_models.append([floor_model, ceil_model])
 
     def build_wall_models(self):
         for seg in self.raw_segments:
