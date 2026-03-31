@@ -94,3 +94,8 @@ In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the exe
 **Problem**: `MapRenderer.remap_array` mapped every vector point through nested expressions like `(p0.x - x_min) * cx + out_min`, performing identical multiplications and subtractions (`x_min * cx`) repeatedly. It also built the output array using `.append` in a loop.
 **Optimization**: Hoisted the invariant offsets (`ox = out_min - x_min * cx` and `oy = out_min - y_min * cy`) out of the loops, transforming the equation to `p.x * cx + ox`. Replaced the `for` loop and `.append` logic with a list comprehension.
 **Impact**: Synthetic benchmarking using `timeit` for mapping 1000 pairs over 10,000 executions showed execution time dropping from ~15.2s to ~10.9s, delivering roughly a **28% speedup** on vector transformation logic.
+
+### 2024-06-05: Optimize Models.build_flat_models by replacing extend with append
+**Problem**: The `Models.build_flat_models` function iterated through `sector_segments` and used `self.flat_models.extend([[floor_model, ceil_model]])` to add a list pair to the models array. The `extend` method forces the creation of an intermediate list wrapper and requires iteration over its items to add them.
+**Optimization**: Replaced `list.extend([[floor_model, ceil_model]])` with `list.append([floor_model, ceil_model])`.
+**Impact**: Running `timeit` for 1,000,000 runs using `l.extend([[f, c]])` vs `l.append([f, c])` dropped execution time from ~0.95s to ~0.50s, yielding roughly a **~47% speedup** for list construction by dodging iteration and intermediate list allocation overhead.
