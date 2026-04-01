@@ -31,6 +31,12 @@ class Textures:
         return texture
 
     def release(self):
-        [ray.unload_texture(tex) for tex in self.walls]
-        [ray.unload_texture(tex) for tex in self.ceils]
-        [ray.unload_texture(tex) for tex in self.floors]
+        # Optimization: Replaced list comprehensions with explicit `for` loops.
+        # Using list comprehensions purely for side effects (unloading textures) creates and
+        # immediately discards unnecessary lists of `None` objects, introducing memory allocation overhead.
+        for tex in self.walls:
+            ray.unload_texture(tex)
+        for tex in self.ceils:
+            ray.unload_texture(tex)
+        for tex in self.floors:
+            ray.unload_texture(tex)
