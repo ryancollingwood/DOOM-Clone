@@ -155,16 +155,17 @@ class FlatModel:
         return triangles, sector_verts
 
     def get_indices(self, triangles, outline_verts):
-        indices = []
         # Optimization: Pre-computed dictionary mapping vertices to their index.
         # This reduces membership lookup complexity from O(N) to O(1) inside the loop.
         vert_index_map = {vert: i for i, vert in enumerate(outline_verts)}
-        for triangle in triangles:
-            vertices = triangle.vertices[::-1] if self.is_floor else triangle.vertices
-            # vertices = triangle.vertices
-            for v in vertices:
-                indices.append(vert_index_map[(v.x, v.y)])
-        return indices
+
+        # Optimization: Using a list comprehension instead of manual loops with `.append()` calls
+        # avoids method lookup overhead. Placing the `is_floor` condition outside the loop avoids
+        # redundant evaluation, and using `reversed()` avoids creating an intermediate list allocation.
+        if self.is_floor:
+            return [vert_index_map[(v.x, v.y)] for t in triangles for v in reversed(t.vertices)]
+        else:
+            return [vert_index_map[(v.x, v.y)] for t in triangles for v in t.vertices]
 
     def get_vertices(self, outline_verts):
         height = self.sector.floor_h if self.is_floor else self.sector.ceil_h
