@@ -30,19 +30,27 @@ class ViewRenderer:
         processed_mid = set()
         processed_other = set()
 
+        # Cache instance attributes and methods to local variables to avoid O(N)
+        # LOAD_ATTR bytecode overhead inside the tight update loop.
+        segments = self.segments
+        mid_update = self.mid_walls_to_draw.update
+        other_update = self.walls_to_draw.update
+        p_mid_add = processed_mid.add
+        p_other_add = processed_other.add
+
         for seg_id in self.segment_ids_to_draw:
             # walls
-            seg = self.segments[seg_id]
+            seg = segments[seg_id]
 
             mid_id = id(seg.mid_wall_models)
             if mid_id not in processed_mid:
-                self.mid_walls_to_draw.update(seg.mid_wall_models)
-                processed_mid.add(mid_id)
+                mid_update(seg.mid_wall_models)
+                p_mid_add(mid_id)
 
             other_id = id(seg.other_wall_models)
             if other_id not in processed_other:
-                self.walls_to_draw.update(seg.other_wall_models)
-                processed_other.add(other_id)
+                other_update(seg.other_wall_models)
+                p_other_add(other_id)
 
     def draw(self):
         # Cache screen_tint and pre-calculate shade_tint to avoid O(N) attribute lookups and conditional checks in the inner render loops
