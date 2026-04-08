@@ -3,6 +3,7 @@ from random import randrange
 from enum import IntEnum, auto
 from typing import Union
 from texture_id import *
+import numpy as np
 
 
 class WallType(IntEnum):
@@ -38,8 +39,8 @@ class Segment:
                  sector_id=None, back_sector_id=None,
                  low_tex_id=None, mid_tex_id=None, up_tex_id=None):
         #
-        self.pos: tuple[vec2] = vec2(p0), vec2(p1)
-        self.vector: vec2 = self.pos[1] - self.pos[0]
+        self.pos = np.array([p0, p1], dtype=np.float64)
+        self.vector = self.pos[1] - self.pos[0]
         #
         self.avg_pos = (self.pos[0] + self.pos[1]) * 0.5
         #
@@ -69,9 +70,9 @@ class BSPNode:
         self.front: BSPNode = None
         self.back: BSPNode = None
         #
-        self.splitter_p0: vec2 = None
-        self.splitter_p1: vec2 = None
-        self.splitter_vec: vec2 = None
+        self.splitter_p0: np.ndarray = None
+        self.splitter_p1: np.ndarray = None
+        self.splitter_vec: np.ndarray = None
 
         # Unpacked scalar coordinates to avoid vec2 object lookups in tight loop (BSPTreeTraverser)
         self.splitter_p0_x: float = None
