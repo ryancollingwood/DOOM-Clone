@@ -187,8 +187,12 @@ class FlatModel:
         vertices = glm.array(vertices)
 
         # get tex coords
-        tex_coords = [glm.vec2(v) for v in sector_verts]
-        tex_coords = tex_coords if self.is_floor else [glm.vec2(v.x, -v.y) for v in tex_coords]
+        # Optimization: When conditionally generating lists via comprehensions, placing the condition
+        # outside the comprehension prevents allocating and iterating over redundant intermediate lists.
+        if self.is_floor:
+            tex_coords = [glm.vec2(v) for v in sector_verts]
+        else:
+            tex_coords = [glm.vec2(v[0], -v[1]) for v in sector_verts]
         tex_coords = glm.array(tex_coords)
 
         # get indices
@@ -199,7 +203,7 @@ class FlatModel:
         mesh = ray.Mesh()
         #
         mesh.triangleCount = triangle_count
-        mesh.vertexCount = vertex_count
+        mesh.vertexCount = 4
         #
         mesh.vertices = ray.ffi.from_buffer("float []", vertices)
         mesh.indices = ray.ffi.from_buffer("unsigned short []", indices)
@@ -275,7 +279,7 @@ class WallModel:
 
     def get_quad_mesh(self) -> ray.Mesh:
         triangle_count = 2
-        vertex_count = 4
+        # vertex_count = 4
 
         # get seg coords
         (x0, z0), (x1, z1) = self.segment.pos
@@ -293,28 +297,38 @@ class WallModel:
         else:
             nx, nz = -dz / width, dx / width
         normal = vec3(nx, 0, nz)
-        normals = glm.array([normal] * vertex_count)
+        normals = glm.array([normal, normal, normal, normal])
 
         # get tex coords
         #
         bottom, top = self.get_wall_height_data()
+        n_bottom, n_top = -bottom, -top
         # '-bottom, -top' - flip texture along Y axis
-        uv0, uv1, uv2, uv3 = (0, -bottom), (width, -bottom), (width, -top), (0, -top)
-        tex_coords = glm.array([glm.vec2(v) for v in [uv0, uv1, uv2, uv3]])
+        tex_coords = glm.array([
+            glm.vec2(0, n_bottom),
+            glm.vec2(width, n_bottom),
+            glm.vec2(width, n_top),
+            glm.vec2(0, n_top)
+        ])
 
         # get vertices
-        v0, v1, v2, v3 = (x0, bottom, z0), (x1, bottom, z1), (x1, top, z1), (x0, top, z0)
-        vertices = glm.array([vec3(v) for v in [v0, v1, v2, v3]])
+        # Optimization: Constructing explicit lists manually avoids unnecessary
+        # Python allocation overhead (tuple packing) before passing data to C-extensions.
+        vertices = glm.array([
+            vec3(x0, bottom, z0),
+            vec3(x1, bottom, z1),
+            vec3(x1, top, z1),
+            vec3(x0, top, z0)
+        ])
 
         # get indices
-        indices = [0, 1, 2, 0, 2, 3]
-        indices = glm.array.from_numbers(glm.uint16, *indices)
+        indices = glm.array.from_numbers(glm.uint16, 0, 1, 2, 0, 2, 3)
 
         # get mesh
         mesh = ray.Mesh()
         #
         mesh.triangleCount = triangle_count
-        mesh.vertexCount = vertex_count
+        mesh.vertexCount = 4
         #
         mesh.vertices = ray.ffi.from_buffer("float []", vertices)
         mesh.indices = ray.ffi.from_buffer("unsigned short []", indices)
