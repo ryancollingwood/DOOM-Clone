@@ -42,15 +42,19 @@ class ViewRenderer:
             # walls
             seg = segments[seg_id]
 
-            mid_id = id(seg.mid_wall_models)
-            if mid_id not in processed_mid:
-                mid_update(seg.mid_wall_models)
-                p_mid_add(mid_id)
+            # Optimization: Check collection truthiness before processing to avoid
+            # function call and hashing overhead for empty data structures.
+            if seg.mid_wall_models:
+                mid_id = id(seg.mid_wall_models)
+                if mid_id not in processed_mid:
+                    mid_update(seg.mid_wall_models)
+                    p_mid_add(mid_id)
 
-            other_id = id(seg.other_wall_models)
-            if other_id not in processed_other:
-                other_update(seg.other_wall_models)
-                p_other_add(other_id)
+            if seg.other_wall_models:
+                other_id = id(seg.other_wall_models)
+                if other_id not in processed_other:
+                    other_update(seg.other_wall_models)
+                    p_other_add(other_id)
 
     def draw(self):
         # Cache screen_tint and pre-calculate shade_tint to avoid O(N) attribute lookups and conditional checks in the inner render loops
