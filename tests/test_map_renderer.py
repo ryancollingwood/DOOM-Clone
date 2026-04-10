@@ -62,3 +62,25 @@ def test_remap_array():
 
     assert remapped[1][1].x == pytest.approx(800)
     assert remapped[1][1].y == pytest.approx(10)
+
+def test_remap_vec2():
+    renderer = MapRenderer.__new__(MapRenderer)
+
+    renderer.x_min, renderer.y_min = 0, 0
+    renderer.x_max, renderer.y_max = 100, 100
+    renderer.x_out_max, renderer.y_out_max = 800, 600
+
+    # Test origin
+    p1 = renderer.remap_vec2(DummyVec2(0, 0))
+    assert p1.x == pytest.approx(10)
+    assert p1.y == pytest.approx(10)
+
+    # Test midpoint
+    p2 = renderer.remap_vec2(DummyVec2(50, 50))
+    assert p2.x == pytest.approx(405)
+    assert p2.y == pytest.approx(305)
+
+    # Test max
+    p3 = renderer.remap_vec2(DummyVec2(100, 100))
+    assert p3.x == pytest.approx(800)
+    assert p3.y == pytest.approx(600)
