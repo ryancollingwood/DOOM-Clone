@@ -19,6 +19,9 @@ class ViewRenderer:
         #
         self.walls_to_draw = set()
         self.mid_walls_to_draw = {}  # as ordered set
+        # Processed tracking sets instantiated here to avoid repeated allocation in update()
+        self.processed_mid = set()
+        self.processed_other = set()
         #
         self.screen_tint = WHITE_COLOR
 
@@ -26,9 +29,11 @@ class ViewRenderer:
         self.walls_to_draw.clear()
         self.mid_walls_to_draw.clear()
 
-        # Track processed wall collections to avoid redundant updates
-        processed_mid = set()
-        processed_other = set()
+        # Cache instance sets to local variables for faster lookup and avoid reallocation
+        processed_mid = self.processed_mid
+        processed_other = self.processed_other
+        processed_mid.clear()
+        processed_other.clear()
 
         # Cache instance attributes and methods to local variables to avoid O(N)
         # LOAD_ATTR bytecode overhead inside the tight update loop.
