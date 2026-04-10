@@ -293,22 +293,23 @@ class WallModel:
         else:
             nx, nz = -dz / width, dx / width
         normal = vec3(nx, 0, nz)
-        normals = glm.array([normal] * vertex_count)
+        # Optimization: Construct explicit list to avoid list multiplication overhead
+        normals = glm.array([normal, normal, normal, normal])
 
         # get tex coords
         #
         bottom, top = self.get_wall_height_data()
         # '-bottom, -top' - flip texture along Y axis
-        uv0, uv1, uv2, uv3 = (0, -bottom), (width, -bottom), (width, -top), (0, -top)
-        tex_coords = glm.array([glm.vec2(v) for v in [uv0, uv1, uv2, uv3]])
+        # Optimization: Avoid intermediate tuple variables and list comprehensions
+        tex_coords = glm.array([glm.vec2(0, -bottom), glm.vec2(width, -bottom), glm.vec2(width, -top), glm.vec2(0, -top)])
 
         # get vertices
-        v0, v1, v2, v3 = (x0, bottom, z0), (x1, bottom, z1), (x1, top, z1), (x0, top, z0)
-        vertices = glm.array([vec3(v) for v in [v0, v1, v2, v3]])
+        # Optimization: Avoid intermediate tuple variables and list comprehensions
+        vertices = glm.array([vec3(x0, bottom, z0), vec3(x1, bottom, z1), vec3(x1, top, z1), vec3(x0, top, z0)])
 
         # get indices
-        indices = [0, 1, 2, 0, 2, 3]
-        indices = glm.array.from_numbers(glm.uint16, *indices)
+        # Optimization: Pass indices directly to avoid list allocation and tuple unpacking overhead
+        indices = glm.array.from_numbers(glm.uint16, 0, 1, 2, 0, 2, 3)
 
         # get mesh
         mesh = ray.Mesh()
