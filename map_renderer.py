@@ -47,19 +47,30 @@ class MapRenderer:
 
     def draw_segments(self, seg_color=ray.ORANGE):
         segment_ids = self.engine.bsp_traverser.seg_ids_to_draw
+
+        # Optimization: Cache global functions and attributes to local variables to avoid expensive
+        # LOAD_GLOBAL and LOAD_ATTR bytecode overhead inside the tight rendering loop.
+        draw_line = ray.draw_line_v
+        draw_circle = ray.draw_circle_v
+        white = ray.WHITE
+        segments = self.segments
+        segment_normals = self.segment_normals
+
         #
         for seg_id in segment_ids:
-        # for seg_id in segment_ids[:int(self.counter) % (len(segment_ids) + 1)]:
-            (x0, y0), (x1, y1) = p0, p1 = self.segments[seg_id]
-            #
-            ray.draw_line_v((x0, y0), (x1, y1), seg_color)
+            p0, p1 = segments[seg_id]
+            x0, y0 = p0.x, p0.y
+            x1, y1 = p1.x, p1.y
+
+            # Optimization: Avoid intermediate tuple allocation by directly passing components
+            draw_line((x0, y0), (x1, y1), seg_color)
 
             # Use pre-calculated normals
-            n0, n1 = self.segment_normals[seg_id]
-            ray.draw_line_v((n0.x, n0.y), (n1.x, n1.y), seg_color)
+            n0, n1 = segment_normals[seg_id]
+            draw_line((n0.x, n0.y), (n1.x, n1.y), seg_color)
             #
-            ray.draw_circle_v((x0, y0), 2, ray.WHITE)
-            ray.draw_circle_v((x1, y1), 2, ray.WHITE)
+            draw_circle((x0, y0), 2, white)
+            draw_circle((x1, y1), 2, white)
 
     def calc_normal(self, p0, p1, scale=10):
         p10 = p1 - p0
