@@ -13,9 +13,9 @@ class App:
     ray.hide_cursor()
     ray.disable_cursor()
 
-    def __init__(self):
+    def __init__(self, udmf_path=None):
         self.dt = 0.0
-        self.engine = Engine(app=self)
+        self.engine = Engine(app=self, udmf_path=udmf_path)
 
     def run(self):
         while not ray.window_should_close():
@@ -27,5 +27,7 @@ class App:
 
 
 if __name__ == '__main__':
-    app = App()
+    import sys
+    udmf_path = sys.argv[1] if len(sys.argv) > 1 else None
+    app = App(udmf_path=udmf_path)
     app.run()

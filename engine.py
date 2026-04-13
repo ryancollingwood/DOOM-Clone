@@ -10,10 +10,10 @@ from time import perf_counter
 
 
 class Engine:
-    def __init__(self, app):
+    def __init__(self, app, udmf_path=None):
         self.app = app
         #
-        self.level_data = LevelData(self)
+        self.level_data = LevelData(self, udmf_path=udmf_path)
         self.bsp_builder = BSPTreeBuilder(self)
         #
         self.camera = Camera(self)
