@@ -62,3 +62,31 @@ def test_remap_array():
 
     assert remapped[1][1].x == pytest.approx(800)
     assert remapped[1][1].y == pytest.approx(10)
+
+
+def test_get_bounds():
+    inf = float('inf')
+
+    # Case 1: Empty list
+    assert MapRenderer.get_bounds([]) == (inf, inf, -inf, -inf)
+
+    # Case 2: Single segment
+    seg1 = (DummyVec2(1, 2), DummyVec2(3, 4))
+    assert MapRenderer.get_bounds([seg1]) == (1, 2, 3, 4)
+
+    # Case 3: Multiple segments
+    seg2 = (DummyVec2(0, 10), DummyVec2(10, 0))
+    seg3 = (DummyVec2(-5, 5), DummyVec2(15, 5))
+    # x_min: -5, y_min: 0, x_max: 15, y_max: 10
+    assert MapRenderer.get_bounds([seg2, seg3]) == (-5, 0, 15, 10)
+
+    # Case 4: Negative coordinates
+    seg4 = (DummyVec2(-10, -20), DummyVec2(-5, -15))
+    assert MapRenderer.get_bounds([seg4]) == (-10, -20, -5, -15)
+
+    # Case 5: Identical points
+    seg5 = (DummyVec2(7, 7), DummyVec2(7, 7))
+    assert MapRenderer.get_bounds([seg5]) == (7, 7, 7, 7)
+
+    # Case 6: Mixed segments
+    assert MapRenderer.get_bounds([seg1, seg2, seg3, seg4, seg5]) == (-10, -20, 15, 10)
