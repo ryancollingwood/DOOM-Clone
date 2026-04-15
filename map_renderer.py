@@ -69,9 +69,12 @@ class MapRenderer:
         return n0, n1
 
     def draw_raw_segments(self):
+        # Optimization: Cache global functions and attributes to local variables.
+        # Bypass custom vec2 __iter__ unpacking overhead by accessing .x and .y directly.
+        dl = ray.draw_line_v
+        darkgray = ray.DARKGRAY
         for p0, p1 in self.raw_segments:
-            (x0, y0), (x1, y1) = p0, p1
-            ray.draw_line_v((x0, y0), (x1, y1), ray.DARKGRAY)
+            dl((p0.x, p0.y), (p1.x, p1.y), darkgray)
 
     def remap_array(self, arr: list[tuple[vec2]], out_min=MAP_OFFSET):
         # Optimization: Pre-calculate constants to avoid repeated math
