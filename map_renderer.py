@@ -47,19 +47,30 @@ class MapRenderer:
 
     def draw_segments(self, seg_color=ray.ORANGE):
         segment_ids = self.engine.bsp_traverser.seg_ids_to_draw
+
+        # Optimization: Cache global functions and attributes to local variables
+        # to avoid repeated LOAD_GLOBAL/LOAD_ATTR bytecode instructions in the hot loop.
+        draw_line = ray.draw_line_v
+        draw_circle = ray.draw_circle_v
+        color_white = ray.WHITE
+
         #
         for seg_id in segment_ids:
         # for seg_id in segment_ids[:int(self.counter) % (len(segment_ids) + 1)]:
-            (x0, y0), (x1, y1) = p0, p1 = self.segments[seg_id]
+            # Optimization: Extract .x and .y directly rather than using generator-based sequence
+            # unpacking like `(x0, y0), (x1, y1) = p0, p1` which incurs significant iterator overhead.
+            p0, p1 = self.segments[seg_id]
+            p0_tup = (p0.x, p0.y)
+            p1_tup = (p1.x, p1.y)
             #
-            ray.draw_line_v((x0, y0), (x1, y1), seg_color)
+            draw_line(p0_tup, p1_tup, seg_color)
 
             # Use pre-calculated normals
             n0, n1 = self.segment_normals[seg_id]
-            ray.draw_line_v((n0.x, n0.y), (n1.x, n1.y), seg_color)
+            draw_line((n0.x, n0.y), (n1.x, n1.y), seg_color)
             #
-            ray.draw_circle_v((x0, y0), 2, ray.WHITE)
-            ray.draw_circle_v((x1, y1), 2, ray.WHITE)
+            draw_circle(p0_tup, 2, color_white)
+            draw_circle(p1_tup, 2, color_white)
 
     def calc_normal(self, p0, p1, scale=10):
         p10 = p1 - p0
@@ -69,9 +80,13 @@ class MapRenderer:
         return n0, n1
 
     def draw_raw_segments(self):
+        # Optimization: Cache global functions and attributes to avoid LOAD_GLOBAL/LOAD_ATTR overhead
+        draw_line = ray.draw_line_v
+        color_darkgray = ray.DARKGRAY
+
         for p0, p1 in self.raw_segments:
-            (x0, y0), (x1, y1) = p0, p1
-            ray.draw_line_v((x0, y0), (x1, y1), ray.DARKGRAY)
+            # Optimization: Extract attributes directly rather than using sequence unpacking
+            draw_line((p0.x, p0.y), (p1.x, p1.y), color_darkgray)
 
     def remap_array(self, arr: list[tuple[vec2]], out_min=MAP_OFFSET):
         # Optimization: Pre-calculate constants to avoid repeated math
