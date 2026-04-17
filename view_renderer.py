@@ -42,18 +42,19 @@ class ViewRenderer:
             # walls
             seg = segments[seg_id]
 
-            # Optimization: Check collection truthiness before processing to avoid
-            # function call and hashing overhead for empty data structures.
-            if seg.mid_wall_models:
-                mid_id = id(seg.mid_wall_models)
+            # Optimization: Use the walrus operator (:=) to evaluate collection truthiness
+            # and cache the reference locally in one step. This avoids repeated LOAD_ATTR
+            # overhead for multiple accesses of `seg.mid_wall_models` in this tight loop.
+            if (mid := seg.mid_wall_models):
+                mid_id = id(mid)
                 if mid_id not in processed_mid:
-                    mid_update(seg.mid_wall_models)
+                    mid_update(mid)
                     p_mid_add(mid_id)
 
-            if seg.other_wall_models:
-                other_id = id(seg.other_wall_models)
+            if (other := seg.other_wall_models):
+                other_id = id(other)
                 if other_id not in processed_other:
-                    other_update(seg.other_wall_models)
+                    other_update(other)
                     p_other_add(other_id)
 
     def draw(self):
