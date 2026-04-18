@@ -1,3 +1,4 @@
+import sys
 import raylib.defines
 from settings import *
 from engine import Engine
@@ -13,9 +14,9 @@ class App:
     ray.hide_cursor()
     ray.disable_cursor()
 
-    def __init__(self):
+    def __init__(self, level_path=None):
         self.dt = 0.0
-        self.engine = Engine(app=self)
+        self.engine = Engine(app=self, level_path=level_path)
 
     def run(self):
         while not ray.window_should_close():
@@ -27,5 +28,6 @@ class App:
 
 
 if __name__ == '__main__':
-    app = App()
+    level_path = sys.argv[1] if len(sys.argv) > 1 else None
+    app = App(level_path)
     app.run()
