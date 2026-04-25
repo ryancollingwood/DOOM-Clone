@@ -54,16 +54,21 @@ class MapRenderer:
         draw_circle_v = ray.draw_circle_v
         WHITE = ray.WHITE
 
+        # Optimization: Cache self.segments and self.segment_normals to avoid LOAD_ATTR
+        # bytecode execution per iteration
+        segments = self.segments
+        segment_normals = self.segment_normals
+
         for seg_id in segment_ids:
         # for seg_id in segment_ids[:int(self.counter) % (len(segment_ids) + 1)]:
-            p0, p1 = self.segments[seg_id]
+            p0, p1 = segments[seg_id]
             x0, y0 = p0.x, p0.y
             x1, y1 = p1.x, p1.y
             #
             draw_line_v((x0, y0), (x1, y1), seg_color)
 
             # Use pre-calculated normals
-            n0, n1 = self.segment_normals[seg_id]
+            n0, n1 = segment_normals[seg_id]
             draw_line_v((n0.x, n0.y), (n1.x, n1.y), seg_color)
             #
             draw_circle_v((x0, y0), 2, WHITE)
