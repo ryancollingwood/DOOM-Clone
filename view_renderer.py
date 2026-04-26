@@ -45,17 +45,17 @@ class ViewRenderer:
             # Optimization: Use the walrus operator (:=) to evaluate collection truthiness
             # and cache the reference locally in one step. This avoids repeated LOAD_ATTR
             # overhead for multiple accesses of `seg.mid_wall_models` in this tight loop.
+            # We track uniqueness by `seg_id` rather than `id(mid)` to prevent the overhead
+            # of repeatedly evaluating the built-in `id()` function for uniquely mapped segment data.
             if (mid := seg.mid_wall_models):
-                mid_id = id(mid)
-                if mid_id not in processed_mid:
+                if seg_id not in processed_mid:
                     mid_update(mid)
-                    p_mid_add(mid_id)
+                    p_mid_add(seg_id)
 
             if (other := seg.other_wall_models):
-                other_id = id(other)
-                if other_id not in processed_other:
+                if seg_id not in processed_other:
                     other_update(other)
-                    p_other_add(other_id)
+                    p_other_add(seg_id)
 
     def draw(self):
         # Cache screen_tint and pre-calculate shade_tint to avoid O(N) attribute lookups and conditional checks in the inner render loops
