@@ -3,15 +3,41 @@ from data_types import *
 from levels.test_level import *
 
 
+import importlib.util
+from tiled_parser import parse_tiled_json
+
 class LevelData:
-    def __init__(self, engine):
+    def __init__(self, engine, filepath=None):
         self.engine = engine
         #
-        self.settings = SETTINGS
-        #
-        self.sector_data = SECTOR_DATA
-        self.segments_of_sector_boundaries = SEGMENTS_OF_SECTOR_BOUNDARIES
-        self.segments_within_sectors = SEGMENTS_WITHIN_SECTORS
+        if filepath is None:
+            self.settings = SETTINGS
+            self.sector_data = SECTOR_DATA
+            self.segments_of_sector_boundaries = SEGMENTS_OF_SECTOR_BOUNDARIES
+            self.segments_within_sectors = SEGMENTS_WITHIN_SECTORS
+        elif filepath.endswith('.json'):
+            (
+                self.settings,
+                self.sector_data,
+                self.segments_of_sector_boundaries,
+                self.segments_within_sectors
+            ) = parse_tiled_json(filepath)
+
+            # fallback if not defined
+            if self.settings.get('cam_pos') is None:
+                self.settings['cam_pos'] = (1.0, CAM_HEIGHT, 1.0)
+            if self.settings.get('cam_target') is None:
+                self.settings['cam_target'] = (5.0, CAM_HEIGHT, 5.0)
+        else:
+            # fallback for python maps
+            spec = importlib.util.spec_from_file_location("dynamic_level", filepath)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            self.settings = module.SETTINGS
+            self.sector_data = module.SECTOR_DATA
+            self.segments_of_sector_boundaries = module.SEGMENTS_OF_SECTOR_BOUNDARIES
+            self.segments_within_sectors = module.SEGMENTS_WITHIN_SECTORS
+
         #
         self.sectors = {}
         self.handle_sector_data()
