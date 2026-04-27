@@ -1,17 +1,26 @@
 from settings import *
 from data_types import *
-from levels.test_level import *
+import levels.test_level as test_level
+from udmf_parser import UDMFParser
 
 
 class LevelData:
-    def __init__(self, engine):
+    def __init__(self, engine, udmf_path=None):
         self.engine = engine
-        #
-        self.settings = SETTINGS
-        #
-        self.sector_data = SECTOR_DATA
-        self.segments_of_sector_boundaries = SEGMENTS_OF_SECTOR_BOUNDARIES
-        self.segments_within_sectors = SEGMENTS_WITHIN_SECTORS
+
+        if udmf_path:
+            parser = UDMFParser(filepath=udmf_path)
+            engine_data = parser.generate_engine_data()
+            self.settings = engine_data['SETTINGS']
+            self.sector_data = engine_data['SECTOR_DATA']
+            self.segments_of_sector_boundaries = engine_data['SEGMENTS_OF_SECTOR_BOUNDARIES']
+            self.segments_within_sectors = engine_data['SEGMENTS_WITHIN_SECTORS']
+        else:
+            self.settings = test_level.SETTINGS
+            self.sector_data = test_level.SECTOR_DATA
+            self.segments_of_sector_boundaries = test_level.SEGMENTS_OF_SECTOR_BOUNDARIES
+            self.segments_within_sectors = test_level.SEGMENTS_WITHIN_SECTORS
+
         #
         self.sectors = {}
         self.handle_sector_data()
