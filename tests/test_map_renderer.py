@@ -62,3 +62,50 @@ def test_remap_array():
 
     assert remapped[1][1].x == pytest.approx(800)
     assert remapped[1][1].y == pytest.approx(10)
+
+def test_get_bounds_empty():
+    inf = float('inf')
+    x_min, y_min, x_max, y_max = MapRenderer.get_bounds([])
+    assert x_min == inf
+    assert y_min == inf
+    assert x_max == -inf
+    assert y_max == -inf
+
+def test_get_bounds_single_segment():
+    segments = [(DummyVec2(10, 20), DummyVec2(30, 40))]
+    x_min, y_min, x_max, y_max = MapRenderer.get_bounds(segments)
+    assert x_min == 10
+    assert y_min == 20
+    assert x_max == 30
+    assert y_max == 40
+
+def test_get_bounds_multiple_segments():
+    segments = [
+        (DummyVec2(10, 20), DummyVec2(30, 40)),
+        (DummyVec2(0, 50), DummyVec2(50, -10))
+    ]
+    x_min, y_min, x_max, y_max = MapRenderer.get_bounds(segments)
+    assert x_min == 0
+    assert y_min == -10
+    assert x_max == 50
+    assert y_max == 50
+
+def test_get_bounds_negative_coords():
+    segments = [
+        (DummyVec2(-10, -20), DummyVec2(-30, -40))
+    ]
+    x_min, y_min, x_max, y_max = MapRenderer.get_bounds(segments)
+    assert x_min == -30
+    assert y_min == -40
+    assert x_max == -10
+    assert y_max == -20
+
+def test_get_bounds_zero_length():
+    segments = [
+        (DummyVec2(10, 10), DummyVec2(10, 10))
+    ]
+    x_min, y_min, x_max, y_max = MapRenderer.get_bounds(segments)
+    assert x_min == 10
+    assert y_min == 10
+    assert x_max == 10
+    assert y_max == 10
