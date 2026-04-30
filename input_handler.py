@@ -1,5 +1,5 @@
 from settings import *
-from enum import IntEnum, auto
+from enum import IntEnum
 from pyray import is_key_down, is_key_pressed, KeyboardKey
 
 
@@ -46,4 +46,4 @@ class InputHandler:
             self.engine.view_renderer.update_screen_tint()
 
         if is_key_pressed(Key.SCREEN_SHOT):
-            ray.take_screenshot('screen_shot.png')
+            ray.take_screenshot('screen_shot.png')  # noqa: F405
