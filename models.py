@@ -3,6 +3,7 @@ from data_types import *
 from ground.base import get_context
 from sect.triangulation import Triangulation
 from textures import Textures
+import collections
 
 ctx = get_context()
 Contour, Point, Polygon = ctx.contour_cls, ctx.point_cls, ctx.polygon_cls
@@ -105,16 +106,11 @@ class FlatModel:
         # Optimization: Dictionary-based adjacency graph reduces time complexity from O(N^2) to O(N).
         # Using an explicit adjacency dictionary removes the need to repeatedly search the entire list
         # of segments for a matching point, drastically speeding up sequential vertex generation.
-        adj = {}
+        # Refactored to use collections.defaultdict(list) to avoid redundant conditional hashing overhead.
+        adj = collections.defaultdict(list)
         for p0, p1 in sector_segments:
-            if p0 in adj:
-                adj[p0].append(p1)
-            else:
-                adj[p0] = [p1]
-            if p1 in adj:
-                adj[p1].append(p0)
-            else:
-                adj[p1] = [p0]
+            adj[p0].append(p1)
+            adj[p1].append(p0)
 
         start = sector_segments[0][0]
         outline = [start]

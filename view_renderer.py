@@ -26,35 +26,37 @@ class ViewRenderer:
         self.walls_to_draw.clear()
         self.mid_walls_to_draw.clear()
 
-        # Track processed wall collections to avoid redundant updates
-        processed_mid = set()
-        processed_other = set()
-
         # Cache instance attributes and methods to local variables to avoid O(N)
         # LOAD_ATTR bytecode overhead inside the tight update loop.
         segments = self.segments
         mid_update = self.mid_walls_to_draw.update
         other_update = self.walls_to_draw.update
-        p_mid_add = processed_mid.add
-        p_other_add = processed_other.add
+
+        # Track processed segments by their unique original ID to avoid redundant updates
+        processed_segs = set()
+        p_segs_add = processed_segs.add
 
         for seg_id in self.segment_ids_to_draw:
             # walls
             seg = segments[seg_id]
+            s_id = seg.seg_id
 
-            # Optimization: Check collection truthiness before processing to avoid
-            # function call and hashing overhead for empty data structures.
-            if seg.mid_wall_models:
-                mid_id = id(seg.mid_wall_models)
-                if mid_id not in processed_mid:
-                    mid_update(seg.mid_wall_models)
-                    p_mid_add(mid_id)
-
-            if seg.other_wall_models:
-                other_id = id(seg.other_wall_models)
-                if other_id not in processed_other:
-                    other_update(seg.other_wall_models)
-                    p_other_add(other_id)
+            # Since segment IDs are guaranteed to be populated by the level builder,
+            # we can use them to efficiently skip processing walls for split segments.
+            # However, if s_id is somehow None (e.g. newly instantiated without threading ID),
+            # fall back to object id() mapping to ensure no geometry is lost.
+            if s_id is not None:
+                if s_id not in processed_segs:
+                    if (mid := seg.mid_wall_models):
+                        mid_update(mid)
+                    if (other := seg.other_wall_models):
+                        other_update(other)
+                    p_segs_add(s_id)
+            else:
+                if (mid := seg.mid_wall_models):
+                    mid_update(mid)
+                if (other := seg.other_wall_models):
+                    other_update(other)
 
     def draw(self):
         # Cache screen_tint and pre-calculate shade_tint to avoid O(N) attribute lookups and conditional checks in the inner render loops

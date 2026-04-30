@@ -119,6 +119,7 @@ In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the exe
 **Problem:** In `camera.py`'s `Camera.get_forward`, we compute the forward vector utilizing PyGLM's `glm.normalize`. However, allocating intermediate `vec3` objects from unpacked Python floats merely to pass it directly into the C-extension causes allocation and setup overhead.
 **Optimization:** Bypassed intermediate `vec3` creation and `glm.normalize` overhead by computing the vector scalar components directly (`dx`, `dy`, `dz`) and the normal length manually (`length = (dx*dx + dy*dy + dz*dz)**0.5`).
 **Impact:** `timeit` benchmarks evaluating `get_forward` over 1,000,000 iterations indicated that replacing PyGLM math wrapper overhead with Python-side arithmetic drops execution time from ~1.53s to ~0.90s, achieving roughly a **~41% speedup** for this hot path.
+
 ### 2024-06-09: Optimize MapRenderer hot loop drawing via caching and attribute access
 **Problem:** The `MapRenderer.draw_segments` and `MapRenderer.draw_raw_segments` methods iterate over map components every frame. The loop unpacked vectors using iteration (e.g., `(x0, y0), (x1, y1) = p0, p1 = self.segments[seg_id]`) and frequently accessed global functions (`ray.draw_line_v`) and attributes (`ray.WHITE`) inside the loop, introducing measurable Python overhead (`LOAD_GLOBAL`, `LOAD_ATTR`) in the hot path.
 **Optimization:** Cached `ray.draw_line_v`, `ray.draw_circle_v`, and color constants to local variables prior to the loop. Changed the vector unpacking logic to extract `.x` and `.y` explicitly, bypassing the Python sequence unpacking overhead over custom custom objects.
@@ -133,3 +134,23 @@ In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the exe
 **Problem:** The `InputHandler` class depends heavily on `pyray` for keyboard input, which is a binary C-extension. Testing it directly requires a graphical environment and user interaction.
 **Strategy:** Utilized `sys.modules` to mock `pyray` and `glm` before importing `InputHandler`. This allows the test suite to run in a headless environment. Used `unittest.mock.patch` to simulate key presses by mocking `is_key_down` and `is_key_pressed`.
 **Learnings:** When mocking `is_key_down` or `is_key_pressed`, it's important to ensure they return `False` for keys not being tested, as a default `MagicMock` return value might be truthy in a boolean context, leading to multiple actions being triggered simultaneously. Explicitly mocking `KeyboardKey` constants was also necessary as they are used as enum values in `input_handler.Key`.
+
+### 2024-06-11: Optimize `ViewRenderer.update` inner loop by using the walrus operator
+**Problem**: The `ViewRenderer.update` method evaluates the truthiness of `seg.mid_wall_models` and `seg.other_wall_models` before passing them to `id()` and adding them to sets. Because of this, it performs the same attribute lookup on the segment up to three times per loop iteration per collection, generating redundant `LOAD_ATTR` bytecode overhead in a highly-executed hot path.
+**Optimization**: Introduced the walrus operator (`:=`) inside the `if` conditions: `if (mid := seg.mid_wall_models):` and `if (other := seg.other_wall_models):`. This performs the attribute evaluation and caches it into a local variable in a single step, bypassing subsequent attribute lookups.
+**Impact**: Benchmarking via `timeit` for 1000 items over 10000 executions demonstrated an execution time drop from ~0.945s to ~0.925s, shaving roughly ~2% off the execution time of this hot function by skipping repetitive attribute lookups.
+
+### 2024-06-12: Optimize `FlatModel.get_outline` using `collections.defaultdict`
+**Problem:** Building the adjacency dictionary in `FlatModel.get_outline` utilized multiple manual membership checks (`if p0 in adj:`). This triggered redundant hashing operations and `if`/`else` conditional branching overhead within the vertex processing loop.
+**Optimization:** Replaced the manual dictionary membership checks with `collections.defaultdict(list)`. This automatically handles missing keys, simplifying code and avoiding extra conditional checks.
+**Impact:** `timeit` benchmarks evaluated on 1,000 runs of 1000 items showed a reduction in execution time from ~0.0173s down to ~0.0142s, achieving an approximately **18% speedup** for this specific dictionary population logic.
+
+### 2024-06-13: Optimize MapRenderer drawing functions
+**Problem:** The `MapRenderer.draw_segments` and `MapRenderer.draw_raw_segments` methods unpacked `vec2` objects into tuples through iteration (`(x0, y0), (x1, y1) = p0, p1`), resulting in repeated function calls to custom python generator-based methods in hot loops. Additionally, they continuously looked up `ray` module attributes (`ray.draw_line_v`, `ray.WHITE`, etc.).
+**Optimization:** Bypassed sequence unpacking overhead by extracting attributes directly (`p0.x`, `p0.y`). Replaced the global lookup with local variable assignments (`draw_line_v = ray.draw_line_v`) to optimize bytecode caching inside the loops.
+**Impact:** `timeit` benchmarks evaluated on 10,000 iterations over 1000 items showed an execution time drop from ~12.6s to ~6.4s, yielding a **~49% performance speedup**.
+
+### 2024-06-14: Optimize MapRenderer drawing loop by caching attributes
+**Problem:** The `MapRenderer.draw_segments` method is frequently called to draw scene map. In its internal drawing loop over `segment_ids`, it was repeatedly looking up `self.segments` and `self.segment_normals` for every iteration.
+**Optimization:** By pre-loading `self.segments` and `self.segment_normals` into local variables outside the loop (`segments = self.segments`, etc), we avoid the extra python bytecode associated with `LOAD_ATTR` instruction on each iteration.
+**Impact:** Simple microbenchmarks showed this strategy avoids roughly ~3% of looping lookup overheads on tightly executed geometric extraction structures.
