@@ -119,6 +119,7 @@ In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the exe
 **Problem:** In `camera.py`'s `Camera.get_forward`, we compute the forward vector utilizing PyGLM's `glm.normalize`. However, allocating intermediate `vec3` objects from unpacked Python floats merely to pass it directly into the C-extension causes allocation and setup overhead.
 **Optimization:** Bypassed intermediate `vec3` creation and `glm.normalize` overhead by computing the vector scalar components directly (`dx`, `dy`, `dz`) and the normal length manually (`length = (dx*dx + dy*dy + dz*dz)**0.5`).
 **Impact:** `timeit` benchmarks evaluating `get_forward` over 1,000,000 iterations indicated that replacing PyGLM math wrapper overhead with Python-side arithmetic drops execution time from ~1.53s to ~0.90s, achieving roughly a **~41% speedup** for this hot path.
+
 ### 2024-06-09: Optimize MapRenderer hot loop drawing via caching and attribute access
 **Problem:** The `MapRenderer.draw_segments` and `MapRenderer.draw_raw_segments` methods iterate over map components every frame. The loop unpacked vectors using iteration (e.g., `(x0, y0), (x1, y1) = p0, p1 = self.segments[seg_id]`) and frequently accessed global functions (`ray.draw_line_v`) and attributes (`ray.WHITE`) inside the loop, introducing measurable Python overhead (`LOAD_GLOBAL`, `LOAD_ATTR`) in the hot path.
 **Optimization:** Cached `ray.draw_line_v`, `ray.draw_circle_v`, and color constants to local variables prior to the loop. Changed the vector unpacking logic to extract `.x` and `.y` explicitly, bypassing the Python sequence unpacking overhead over custom custom objects.
@@ -128,6 +129,11 @@ In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the exe
 **Problem:** In `models.py`'s `WallModel.get_texture`, the condition `if self.wall_type in {WallType.SOLID, WallType.PORTAL_MID}` instantiated a set each time the method was called. Furthermore, `[tex := self.segment.mid_tex_id, 0][tex is None]` created a list just to return a single value based on a condition. Both these allocations added measurable Python-side object allocation overhead.
 **Optimization:** Replaced the set lookup with explicit boolean `or` evaluations (`t == WallType.SOLID or t == WallType.PORTAL_MID`). Replaced the list instantiation trick with standard conditional assignments (`tex if tex is not None else 0`).
 **Impact:** Evaluated over 100,000 iterations via `timeit`, execution time dropped from ~0.18s to ~0.07s, achieving roughly ~60% faster execution.
+
+### 2024-06-11: Testing `InputHandler` by mocking `pyray` and `sys.modules`
+**Problem:** The `InputHandler` class depends heavily on `pyray` for keyboard input, which is a binary C-extension. Testing it directly requires a graphical environment and user interaction.
+**Strategy:** Utilized `sys.modules` to mock `pyray` and `glm` before importing `InputHandler`. This allows the test suite to run in a headless environment. Used `unittest.mock.patch` to simulate key presses by mocking `is_key_down` and `is_key_pressed`.
+**Learnings:** When mocking `is_key_down` or `is_key_pressed`, it's important to ensure they return `False` for keys not being tested, as a default `MagicMock` return value might be truthy in a boolean context, leading to multiple actions being triggered simultaneously. Explicitly mocking `KeyboardKey` constants was also necessary as they are used as enum values in `input_handler.Key`.
 
 ### 2024-06-11: Optimize `ViewRenderer.update` inner loop by using the walrus operator
 **Problem**: The `ViewRenderer.update` method evaluates the truthiness of `seg.mid_wall_models` and `seg.other_wall_models` before passing them to `id()` and adding them to sets. Because of this, it performs the same attribute lookup on the segment up to three times per loop iteration per collection, generating redundant `LOAD_ATTR` bytecode overhead in a highly-executed hot path.
