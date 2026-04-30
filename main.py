@@ -1,7 +1,6 @@
 import raylib.defines
 from settings import *
 from engine import Engine
-import cProfile
 
 
 class App:
