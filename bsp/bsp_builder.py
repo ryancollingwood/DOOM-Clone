@@ -137,10 +137,12 @@ class BSPTreeBuilder:
                     intersection_point = segment_start + intersection * segment_vector
 
                     r_segment = copy(segment)
+                    r_segment.seg_id = segment.seg_id
                     r_segment.pos = segment_start, intersection_point
                     r_segment.vector = r_segment.pos[1] - r_segment.pos[0]
                     #
                     l_segment = copy(segment)
+                    l_segment.seg_id = segment.seg_id
                     l_segment.pos = intersection_point, segment_end
                     l_segment.vector = l_segment.pos[1] - l_segment.pos[0]
 

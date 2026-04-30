@@ -8,6 +8,7 @@ class LevelData:
         self.engine = engine
         #
         self.settings = SETTINGS
+        self.seg_id_counter = 0
         #
         self.sector_data = SECTOR_DATA
         self.segments_of_sector_boundaries = SEGMENTS_OF_SECTOR_BOUNDARIES
@@ -93,5 +94,7 @@ class LevelData:
             low_tex_id=textures[0],
             mid_tex_id=textures[1],
             up_tex_id=textures[2],
+            seg_id=self.seg_id_counter,
         )
+        self.seg_id_counter += 1
         return seg
