@@ -154,3 +154,8 @@ In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the exe
 **Problem:** The `MapRenderer.draw_segments` method is frequently called to draw scene map. In its internal drawing loop over `segment_ids`, it was repeatedly looking up `self.segments` and `self.segment_normals` for every iteration.
 **Optimization:** By pre-loading `self.segments` and `self.segment_normals` into local variables outside the loop (`segments = self.segments`, etc), we avoid the extra python bytecode associated with `LOAD_ATTR` instruction on each iteration.
 **Impact:** Simple microbenchmarks showed this strategy avoids roughly ~3% of looping lookup overheads on tightly executed geometric extraction structures.
+
+### 2024-06-15: Comprehensive Camera Testing with Vector Mocking
+**Problem:** The `Camera` class had several untested movement and vector calculation methods. Testing these was complicated by dependencies on binary libraries (`pyray`, `PyGLM`) and complex vector math.
+**Strategy:** Enhanced the `DummyVec3` mock class to support a full suite of magic methods (`__add__`, `__mul__`, `__iter__`, etc.) and properties (`xz`) to accurately simulate `PyGLM` behavior. Implemented targeted unit tests for `move_x/y/z`, `step_*` methods, and `check_cam_step` normalization logic.
+**Impact:** Increased test coverage for `camera.py` and provided a robust template for testing other vector-heavy components. Verified that tests correctly identify regressions in camera positioning and target tracking.
