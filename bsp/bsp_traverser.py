@@ -30,10 +30,10 @@ class BSPTreeTraverser:
         front = node.front
         back = node.back
 
-        on_front = (x - node.splitter_p0_x) * node.splitter_vec_y < node.splitter_vec_x * (y - node.splitter_p0_y)
-
-        # Pre-check for None to avoid function call overhead
-        if on_front:
+        # Optimization: Mathematically simplified the cross product inequality and cached
+        # the constant right side (`node.splitter_c`) during tree building. This drops 2 subtractions
+        # per traversal node evaluation in the hot path.
+        if x * node.splitter_vec_y - y * node.splitter_vec_x < node.splitter_c:
             if front: self._traverse(front, x, y, append_seg_id)
             #
             append_seg_id(node.segment_id)

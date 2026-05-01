@@ -63,7 +63,7 @@ class Segment:
 class BSPNode:
     # Optimization: __slots__ reduces memory footprint from 336 bytes to 112 bytes per instance.
     # BSP tree nodes are heavily allocated and traversed.
-    __slots__ = ('front', 'back', 'splitter_p0', 'splitter_p1', 'splitter_vec', 'splitter_p0_x', 'splitter_p0_y', 'splitter_vec_x', 'splitter_vec_y', 'segment_id')
+    __slots__ = ('front', 'back', 'splitter_p0', 'splitter_p1', 'splitter_vec', 'splitter_p0_x', 'splitter_p0_y', 'splitter_vec_x', 'splitter_vec_y', 'splitter_c', 'segment_id')
 
     def __init__(self):
         #
@@ -79,5 +79,7 @@ class BSPNode:
         self.splitter_p0_y: float = None
         self.splitter_vec_x: float = None
         self.splitter_vec_y: float = None
+        # Pre-calculated constant for side checking in traverser
+        self.splitter_c: float = None
         #
         self.segment_id: int = None
