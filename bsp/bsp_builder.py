@@ -1,9 +1,7 @@
 from settings import *
 from data_types import Segment, BSPNode
-from utils import cross_2d
 from copy import copy
 import random
-import multiprocessing as mp
 
 
 class BSPTreeBuilder:
@@ -16,7 +14,6 @@ class BSPTreeBuilder:
         self.segments = []  # segments created during BSP tree creation
         self.seg_id = 0
         #
-        # seed = self.find_best_seed_mp()
         seed = self.engine.level_data.settings['seed']
         random.seed(seed)
         random.shuffle(self.raw_segments)
@@ -27,55 +24,6 @@ class BSPTreeBuilder:
         print('num_front:', self.num_front)
         print('num_back:', self.num_back)
         print('num_splits', self.num_splits)
-
-    def find_best_seed_mp(self, start_seed=0, end_seed=1_000_000):
-        cpu_count = mp.cpu_count()
-        #
-        return_dict = mp.Manager().dict()
-        #
-        cpu_range = (end_seed - start_seed) // cpu_count
-        procs = []
-        #
-        for i in range(cpu_count):
-            i_start_seed = i * cpu_range + start_seed
-            i_end_seed = (i + 1) * cpu_range + start_seed
-            print(f'cpu {i}: {i_start_seed}, {i_end_seed}')
-            #
-            proc = mp.Process(
-                target=self.find_best_seed,
-                args=(i, i_start_seed, i_end_seed, return_dict)
-            )
-            procs.append(proc)
-            proc.start()
-
-        for proc in procs:
-            proc.join()
-
-        best_seed = min(return_dict.values(), key=lambda t: t[0])[1]
-        print('\nbest seed:', best_seed)
-        return best_seed
-
-    def find_best_seed(self, i_cpu, start_seed, end_seed, return_dict, weight_factor=3):
-        best_seed, best_score = -1, float('inf')
-        #
-        for seed in range(start_seed, end_seed):
-            raw_segments = self.raw_segments.copy()
-            random.seed(seed)
-            random.shuffle(raw_segments)
-            #
-            root_node = BSPNode()
-            self.segments = []
-            self.seg_id = 0
-            #
-            self.num_front, self.num_back, self.num_splits = 0, 0, 0
-            self.build_bsp_tree(root_node, raw_segments)
-            #
-            score = abs(self.num_back - self.num_front) + weight_factor * self.num_splits
-            if score < best_score:
-                best_seed, best_score = seed, score
-        #
-        print('best_seed =', best_seed, 'score = ', best_score, 'i_cpu:', i_cpu)
-        return_dict[i_cpu] = (best_score, best_seed)
 
     def split_space(self, node: BSPNode, input_segments: list[Segment]):
         splitter_seg = input_segments[0]
