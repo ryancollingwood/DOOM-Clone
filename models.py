@@ -117,7 +117,10 @@ class FlatModel:
         prev = None
         curr = start
 
-        while len(outline) != len(sector_segments) + 1:
+        # Optimization: Caching the length of `sector_segments` into a local variable before the loop
+        # removes redundant function calls and arithmetic in the while loop condition.
+        target_len = len(sector_segments) + 1
+        while len(outline) != target_len:
             neighbors = adj[curr]
             next_node = neighbors[0] if neighbors[0] != prev else neighbors[1]
             outline.append(next_node)
