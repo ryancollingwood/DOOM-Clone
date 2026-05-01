@@ -37,3 +37,7 @@ SHADING_DARK_COLOR = ray.Color(45, 45, 45, 255)
 #
 PITCH_LIMIT_DEG = 89  # hardcoded
 PITCH_LIMIT = glm.radians(PITCH_LIMIT_DEG) #- FOV_Y
+
+# security safety limits
+MAX_SAFE_DT = 0.1
+MAX_WORLD_BOUNDARY = 10000.0
