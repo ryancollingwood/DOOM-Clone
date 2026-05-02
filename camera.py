@@ -1,3 +1,4 @@
+import math
 from settings import *
 
 
@@ -24,14 +25,24 @@ class Camera:
         self.pitch = 0.0
 
     def set_yaw(self):
-        delta_yaw = -ray.get_mouse_delta().x * self.rot_speed
+        m_dx = ray.get_mouse_delta().x
+        if not math.isfinite(m_dx):
+            return
+        delta_yaw = -m_dx * self.rot_speed
         #
         new_target_pos = glm.rotateY(self.forward, delta_yaw)
         self.update_target(new_target_pos)
 
     def set_pitch(self):
-        delta_pitch = -ray.get_mouse_delta().y * self.rot_speed
+        m_dy = ray.get_mouse_delta().y
+        if not math.isfinite(m_dy):
+            return
+        delta_pitch = -m_dy * self.rot_speed
         self.pitch += delta_pitch
+        #
+        if not math.isfinite(self.pitch):
+            self.pitch = 0.0
+            return
         #
         if -PITCH_LIMIT < self.pitch < PITCH_LIMIT:
             new_target_pos = glm.rotate(self.get_forward(), delta_pitch, self.right)
@@ -70,8 +81,13 @@ class Camera:
         return vec3(dx / length, dy / length, dz / length)
 
     def init_cam_step(self):
-        self.speed = CAM_SPEED * self.app.dt
-        self.rot_speed = CAM_ROT_SPEED * self.app.dt
+        dt = self.app.dt
+        if not math.isfinite(dt) or dt < 0:
+            dt = 0
+        dt = min(dt, MAX_SAFE_DT)
+        #
+        self.speed = CAM_SPEED * dt
+        self.rot_speed = CAM_ROT_SPEED * dt
         self.cam_step *= 0
 
     def step_forward(self):
@@ -104,16 +120,25 @@ class Camera:
         self.move_z(dz)
 
     def move_x(self, dx):
-        self.pos_3d.x += dx
-        self.target.x += dx
+        if not math.isfinite(dx):
+            return
+        old_x = self.pos_3d.x
+        self.pos_3d.x = glm.clamp(old_x + dx, -MAX_WORLD_BOUNDARY, MAX_WORLD_BOUNDARY)
+        self.target.x += self.pos_3d.x - old_x
 
     def move_y(self, dy):
-        self.pos_3d.y += dy
-        self.target.y += dy
+        if not math.isfinite(dy):
+            return
+        old_y = self.pos_3d.y
+        self.pos_3d.y = glm.clamp(old_y + dy, -MAX_WORLD_BOUNDARY, MAX_WORLD_BOUNDARY)
+        self.target.y += self.pos_3d.y - old_y
 
     def move_z(self, dz):
-        self.pos_3d.z += dz
-        self.target.z += dz
+        if not math.isfinite(dz):
+            return
+        old_z = self.pos_3d.z
+        self.pos_3d.z = glm.clamp(old_z + dz, -MAX_WORLD_BOUNDARY, MAX_WORLD_BOUNDARY)
+        self.target.z += self.pos_3d.z - old_z
 
     def update_pos_2d(self):
         # 2d position on xz plane
