@@ -39,6 +39,8 @@ class BSPTreeBuilder:
         node.splitter_p0_y = splitter_pos[0].y
         node.splitter_vec_x = splitter_vec.x
         node.splitter_vec_y = splitter_vec.y
+        # Cache mathematical constant for traverser hot path to avoid 2 subtractions per node evaluation
+        node.splitter_c = node.splitter_p0_x * node.splitter_vec_y - node.splitter_vec_x * node.splitter_p0_y
 
         front_segs, back_segs = [], []
 
