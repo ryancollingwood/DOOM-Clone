@@ -115,30 +115,28 @@ class Camera:
 
     def move(self):
         dx, dy, dz = self.cam_step
-        self.move_x(dx)
-        self.move_y(dy)
-        self.move_z(dz)
 
-    def move_x(self, dx):
-        if not math.isfinite(dx):
-            return
-        old_x = self.pos_3d.x
-        self.pos_3d.x = glm.clamp(old_x + dx, -MAX_WORLD_BOUNDARY, MAX_WORLD_BOUNDARY)
-        self.target.x += self.pos_3d.x - old_x
+        # Optimization: Inlining boundary evaluation using standard Python conditional limits
+        # avoids PyGLM wrapper function calls (glm.clamp) and function call overhead over move_*
+        # methods, eliminating C-extension bridging overhead and improving execution speed.
 
-    def move_y(self, dy):
-        if not math.isfinite(dy):
-            return
-        old_y = self.pos_3d.y
-        self.pos_3d.y = glm.clamp(old_y + dy, -MAX_WORLD_BOUNDARY, MAX_WORLD_BOUNDARY)
-        self.target.y += self.pos_3d.y - old_y
+        if math.isfinite(dx):
+            old_x = self.pos_3d.x
+            new_x = old_x + dx
+            self.pos_3d.x = new_x if -MAX_WORLD_BOUNDARY <= new_x <= MAX_WORLD_BOUNDARY else (-MAX_WORLD_BOUNDARY if new_x < -MAX_WORLD_BOUNDARY else MAX_WORLD_BOUNDARY)
+            self.target.x += self.pos_3d.x - old_x
 
-    def move_z(self, dz):
-        if not math.isfinite(dz):
-            return
-        old_z = self.pos_3d.z
-        self.pos_3d.z = glm.clamp(old_z + dz, -MAX_WORLD_BOUNDARY, MAX_WORLD_BOUNDARY)
-        self.target.z += self.pos_3d.z - old_z
+        if math.isfinite(dy):
+            old_y = self.pos_3d.y
+            new_y = old_y + dy
+            self.pos_3d.y = new_y if -MAX_WORLD_BOUNDARY <= new_y <= MAX_WORLD_BOUNDARY else (-MAX_WORLD_BOUNDARY if new_y < -MAX_WORLD_BOUNDARY else MAX_WORLD_BOUNDARY)
+            self.target.y += self.pos_3d.y - old_y
+
+        if math.isfinite(dz):
+            old_z = self.pos_3d.z
+            new_z = old_z + dz
+            self.pos_3d.z = new_z if -MAX_WORLD_BOUNDARY <= new_z <= MAX_WORLD_BOUNDARY else (-MAX_WORLD_BOUNDARY if new_z < -MAX_WORLD_BOUNDARY else MAX_WORLD_BOUNDARY)
+            self.target.z += self.pos_3d.z - old_z
 
     def update_pos_2d(self):
         # 2d position on xz plane
