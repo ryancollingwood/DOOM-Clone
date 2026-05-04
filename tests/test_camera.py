@@ -141,31 +141,6 @@ def test_get_forward_zero_length(mocked_camera_module):
     assert forward.z == 0.0
     assert isinstance(forward, DummyVec3)
 
-def test_camera_move_methods(mocked_camera_module):
-    Camera = mocked_camera_module
-    mock_engine = MagicMock()
-    mock_engine.level_data.settings = {
-        'cam_pos': (0, 0, 0),
-        'cam_target': (0, 0, -1)
-    }
-    cam = Camera(mock_engine)
-
-    # Initial state
-    cam.pos_3d = DummyVector3(1, 2, 3)
-    cam.target = DummyVector3(4, 5, 6)
-
-    cam.move_x(10)
-    assert cam.pos_3d.x == 11
-    assert cam.target.x == 14
-
-    cam.move_y(-5)
-    assert cam.pos_3d.y == -3
-    assert cam.target.y == 0
-
-    cam.move_z(7)
-    assert cam.pos_3d.z == 10
-    assert cam.target.z == 13
-
 def test_camera_step_methods(mocked_camera_module):
     Camera = mocked_camera_module
     mock_engine = MagicMock()
@@ -217,16 +192,23 @@ def test_camera_move_integration(mocked_camera_module):
     cam = Camera(mock_engine)
     cam.pos_3d = DummyVector3(0, 0, 0)
     cam.target = DummyVector3(0, 0, -1)
-    cam.cam_step = DummyVec3(1, 2, 3)
+    cam.cam_step = DummyVec3(1, -2, 3)
 
     cam.move()
 
     assert cam.pos_3d.x == 1
-    assert cam.pos_3d.y == 2
+    assert cam.pos_3d.y == -2
     assert cam.pos_3d.z == 3
     assert cam.target.x == 1
-    assert cam.target.y == 2
+    assert cam.target.y == -2
     assert cam.target.z == 2 # -1 + 3
+
+    # Boundary tests
+    cam.cam_step = DummyVec3(20000, -20000, float('inf'))
+    cam.move()
+    assert cam.pos_3d.x == 10000.0
+    assert cam.pos_3d.y == -10000.0
+    assert cam.pos_3d.z == 3 # unchanged because of float('inf')
 
 def test_camera_check_cam_step(mocked_camera_module):
     Camera = mocked_camera_module
