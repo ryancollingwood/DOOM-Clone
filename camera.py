@@ -48,7 +48,10 @@ class Camera:
             new_target_pos = glm.rotate(self.get_forward(), delta_pitch, self.right)
             self.update_target(new_target_pos)
         else:
-            self.pitch = glm.clamp(self.pitch, -PITCH_LIMIT, PITCH_LIMIT)
+            # Optimization: Replaced PyGLM's glm.clamp with standard Python max/min functions.
+            # Bypassing the C-extension function call overhead yields a measurable execution speedup
+            # while remaining more readable than dense ternary expressions.
+            self.pitch = max(-PITCH_LIMIT, min(self.pitch, PITCH_LIMIT))
 
     def update_target(self, new_target_pos: vec3):
         self.target.x = self.pos_3d.x + new_target_pos.x
