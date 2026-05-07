@@ -32,9 +32,9 @@ class ViewRenderer:
         mid_update = self.mid_walls_to_draw.update
         other_update = self.walls_to_draw.update
 
-        # Track processed segments by their unique original ID to avoid redundant updates
-        processed_segs = set()
-        p_segs_add = processed_segs.add
+        # Optimization: Track processed segments by their unique original ID using a pre-allocated
+        # boolean list instead of a set. This avoids hashing overhead and set lookups in the hot path.
+        processed_segs = [False] * self.engine.level_data.seg_id_counter
 
         for seg_id in self.segment_ids_to_draw:
             # walls
@@ -46,12 +46,19 @@ class ViewRenderer:
             # However, if s_id is somehow None (e.g. newly instantiated without threading ID),
             # fall back to object id() mapping to ensure no geometry is lost.
             if s_id is not None:
-                if s_id not in processed_segs:
+                # Add safety bounds check to prevent IndexError
+                if s_id < len(processed_segs):
+                    if not processed_segs[s_id]:
+                        if (mid := seg.mid_wall_models):
+                            mid_update(mid)
+                        if (other := seg.other_wall_models):
+                            other_update(other)
+                        processed_segs[s_id] = True
+                else:
                     if (mid := seg.mid_wall_models):
                         mid_update(mid)
                     if (other := seg.other_wall_models):
                         other_update(other)
-                    p_segs_add(s_id)
             else:
                 if (mid := seg.mid_wall_models):
                     mid_update(mid)
