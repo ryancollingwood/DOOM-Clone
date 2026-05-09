@@ -20,17 +20,21 @@ class ViewRenderer:
         self.walls_to_draw = set()
         self.mid_walls_to_draw = {}  # as ordered set
         #
+        self.visible_sector_ids = set()
+        #
         self.screen_tint = WHITE_COLOR
 
     def update(self):
         self.walls_to_draw.clear()
         self.mid_walls_to_draw.clear()
+        self.visible_sector_ids.clear()
 
         # Cache instance attributes and methods to local variables to avoid O(N)
         # LOAD_ATTR bytecode overhead inside the tight update loop.
         segments = self.segments
         mid_update = self.mid_walls_to_draw.update
         other_update = self.walls_to_draw.update
+        visible_sector_ids_add = self.visible_sector_ids.add
 
         # Optimization: Track processed segments by their unique original ID using a pre-allocated
         # boolean list instead of a set. This avoids hashing overhead and set lookups in the hot path.
@@ -45,6 +49,13 @@ class ViewRenderer:
             # we can use them to efficiently skip processing walls for split segments.
             # However, if s_id is somehow None (e.g. newly instantiated without threading ID),
             # fall back to object id() mapping to ensure no geometry is lost.
+
+            # Optimization: Dynamically track which sectors are actually visible via drawn segments.
+            # This allows skipping redundant flat (floor/ceiling) rendering for invisible sectors in draw().
+            visible_sector_ids_add(seg.sector_id)
+            if (back_sector_id := seg.back_sector_id) is not None:
+                visible_sector_ids_add(back_sector_id)
+
             if s_id is not None:
                 # Add safety bounds check to prevent IndexError
                 if s_id < len(processed_segs):
@@ -76,7 +87,7 @@ class ViewRenderer:
         v_zero = VEC3_ZERO
 
         # draw flats
-        for sec_id in self.sectors:
+        for sec_id in self.visible_sector_ids:
             #
             floor, ceil = self.flat_models[sec_id]
             draw_model(ceil.model, v_zero, 1.0, screen_tint)
