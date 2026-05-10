@@ -43,6 +43,12 @@ def test_remap_array():
     renderer.x_min, renderer.y_min = 0, 0
     renderer.x_max, renderer.y_max = 100, 100
     renderer.x_out_max, renderer.y_out_max = 800, 600
+    renderer.dx = 100
+    renderer.dy = 100
+    renderer.cx = (800 - 10) / 100
+    renderer.cy = (600 - 10) / 100
+    renderer.ox = 10
+    renderer.oy = 10
 
     arr = [
         (DummyVec2(0, 0), DummyVec2(50, 50)),
