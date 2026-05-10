@@ -10,6 +10,19 @@ class MapRenderer:
         self.x_min, self.y_min, self.x_max, self.y_max = self.get_bounds(raw_segments)
         #
         self.x_out_max, self.y_out_max = self.get_map_bounds()
+
+        # Optimization: Pre-calculate remap coefficients for the default MAP_OFFSET once,
+        # saving repeated calculations in remap_vec2, remap_x, and remap_y.
+        out_min = MAP_OFFSET
+        dx = self.x_max - self.x_min
+        dy = self.y_max - self.y_min
+        self.dx = dx
+        self.dy = dy
+        self.cx = (self.x_out_max - out_min) / dx if dx else 0
+        self.cy = (self.y_out_max - out_min) / dy if dy else 0
+        self.ox = out_min - self.x_min * self.cx
+        self.oy = out_min - self.y_min * self.cy
+
         #
         self.raw_segments = self.remap_array(raw_segments)
         #
@@ -113,17 +126,31 @@ class MapRenderer:
         ]
 
     def remap_vec2(self, p: vec2, out_min=MAP_OFFSET):
-        x = (p.x - self.x_min) * (self.x_out_max - out_min) / (self.x_max - self.x_min) + out_min
-        y = (p.y - self.y_min) * (self.y_out_max - out_min) / (self.y_max - self.y_min) + out_min
-        return vec2(x, y)
+        # Optimization: Use pre-calculated remapping coefficients for the default out_min
+        if out_min == MAP_OFFSET:
+            return vec2(p.x * self.cx + self.ox, p.y * self.cy + self.oy)
+
+        dx = self.dx
+        dy = self.dy
+        cx = (self.x_out_max - out_min) / dx if dx else 0
+        cy = (self.y_out_max - out_min) / dy if dy else 0
+        ox = out_min - self.x_min * cx
+        oy = out_min - self.y_min * cy
+        return vec2(p.x * cx + ox, p.y * cy + oy)
 
     def remap_x(self, x, out_min=MAP_OFFSET):
+        if out_min == MAP_OFFSET:
+            return x * self.cx + self.ox
         out_max = self.x_out_max
-        return (x - self.x_min) * (out_max - out_min) / (self.x_max - self.x_min) + out_min
+        dx = self.dx
+        return (x - self.x_min) * (out_max - out_min) / dx if dx else out_min
 
     def remap_y(self, y, out_min=MAP_OFFSET):
+        if out_min == MAP_OFFSET:
+            return y * self.cy + self.oy
         out_max = self.y_out_max
-        return (y - self.y_min) * (out_max - out_min) / (self.y_max - self.y_min) + out_min
+        dy = self.dy
+        return (y - self.y_min) * (out_max - out_min) / dy if dy else out_min
 
     @staticmethod
     def get_bounds(segments: list[tuple[vec2]]):
