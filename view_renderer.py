@@ -34,36 +34,29 @@ class ViewRenderer:
 
         # Optimization: Track processed segments by their unique original ID using a pre-allocated
         # boolean list instead of a set. This avoids hashing overhead and set lookups in the hot path.
-        processed_segs = [False] * self.engine.level_data.seg_id_counter
+        num_segs = self.engine.level_data.seg_id_counter
+        processed_segs = [False] * num_segs
 
         for seg_id in self.segment_ids_to_draw:
             # walls
             seg = segments[seg_id]
             s_id = seg.seg_id
 
+            # Optimization: Flatten conditional nesting to avoid duplicate bytecode
+            # execution blocks and nested branch depth, skipping early if already processed.
             # Since segment IDs are guaranteed to be populated by the level builder,
             # we can use them to efficiently skip processing walls for split segments.
             # However, if s_id is somehow None (e.g. newly instantiated without threading ID),
-            # fall back to object id() mapping to ensure no geometry is lost.
-            if s_id is not None:
-                # Add safety bounds check to prevent IndexError
-                if s_id < len(processed_segs):
-                    if not processed_segs[s_id]:
-                        if (mid := seg.mid_wall_models):
-                            mid_update(mid)
-                        if (other := seg.other_wall_models):
-                            other_update(other)
-                        processed_segs[s_id] = True
-                else:
-                    if (mid := seg.mid_wall_models):
-                        mid_update(mid)
-                    if (other := seg.other_wall_models):
-                        other_update(other)
-            else:
-                if (mid := seg.mid_wall_models):
-                    mid_update(mid)
-                if (other := seg.other_wall_models):
-                    other_update(other)
+            # fall back to evaluation to ensure no geometry is lost.
+            if s_id is not None and s_id < num_segs:
+                if processed_segs[s_id]:
+                    continue
+                processed_segs[s_id] = True
+
+            if (mid := seg.mid_wall_models):
+                mid_update(mid)
+            if (other := seg.other_wall_models):
+                other_update(other)
 
     def draw(self):
         # Cache screen_tint and pre-calculate shade_tint to avoid O(N) attribute lookups and conditional checks in the inner render loops
