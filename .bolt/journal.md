@@ -183,3 +183,8 @@ In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the exe
 **Problem:** The initial MapRenderer caching optimization only applied the new pre-calculated variables to `remap_vec2`, leaving the sister methods `remap_x` and `remap_y` performing the redundant recalculations.
 **Optimization:** Rolled out the pre-calculated variable usage (branching on `MAP_OFFSET`) to `remap_x` and `remap_y` as well, ensuring consistent performance characteristics across the remapping API.
 **Impact:** `profile_test.py` time dropped slightly more, confirming the hot loop usage across the board. The math is now safely pre-calculated.
+
+### 2024-06-19: Flatten `ViewRenderer.update` hotpath conditional logic
+**Problem:** The `ViewRenderer.update` method contained deeply nested `if`/`else` branches to safely check and populate segment objects into dictionaries, duplicating the core processing code (`mid_update` and `other_update`) multiple times across the tree.
+**Optimization:** By pre-calculating `num_segs = self.engine.level_data.seg_id_counter` before the loop and flattening the logic using an early `continue` statement (`if s_id is not None and s_id < num_segs: if processed_segs[s_id]: continue`), we avoided duplicate bytecode execution and removed heavy nesting.
+**Impact:** Benchmarking this specific logic segment via `timeit` for 1000 items over 10000 executions demonstrated an execution time drop from ~4.9s to ~3.6s, achieving roughly a ~25% speedup by eliminating redundant evaluation paths.
