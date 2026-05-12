@@ -25,12 +25,15 @@ class MapRenderer:
 
         #
         self.raw_segments = self.remap_array(raw_segments)
+        self.raw_segments_tuples = [((p0.x, p0.y), (p1.x, p1.y)) for p0, p1 in self.raw_segments]
         #
         self.segments = self.remap_array(
             [seg.pos for seg in self.engine.bsp_builder.segments])
 
         # Pre-calculate normals for segments to avoid redundant computation each frame
         self.segment_normals = [self.calc_normal(p0, p1) for p0, p1 in self.segments]
+        self.segments_tuples = [((p0.x, p0.y), (p1.x, p1.y)) for p0, p1 in self.segments]
+        self.segment_normals_tuples = [((n0.x, n0.y), (n1.x, n1.y)) for n0, n1 in self.segment_normals]
 
         self.counter = 0.0
         #
@@ -69,23 +72,21 @@ class MapRenderer:
 
         # Optimization: Cache self.segments and self.segment_normals to avoid LOAD_ATTR
         # bytecode execution per iteration
-        segments = self.segments
-        segment_normals = self.segment_normals
+        segments_tuples = self.segments_tuples
+        segment_normals_tuples = self.segment_normals_tuples
 
         for seg_id in segment_ids:
         # for seg_id in segment_ids[:int(self.counter) % (len(segment_ids) + 1)]:
-            p0, p1 = segments[seg_id]
-            x0, y0 = p0.x, p0.y
-            x1, y1 = p1.x, p1.y
+            p0_t, p1_t = segments_tuples[seg_id]
             #
-            draw_line_v((x0, y0), (x1, y1), seg_color)
+            draw_line_v(p0_t, p1_t, seg_color)
 
             # Use pre-calculated normals
-            n0, n1 = segment_normals[seg_id]
-            draw_line_v((n0.x, n0.y), (n1.x, n1.y), seg_color)
+            n0_t, n1_t = segment_normals_tuples[seg_id]
+            draw_line_v(n0_t, n1_t, seg_color)
             #
-            draw_circle_v((x0, y0), 2, WHITE)
-            draw_circle_v((x1, y1), 2, WHITE)
+            draw_circle_v(p0_t, 2, WHITE)
+            draw_circle_v(p1_t, 2, WHITE)
 
     def calc_normal(self, p0, p1, scale=10):
         p10 = p1 - p0
@@ -99,8 +100,8 @@ class MapRenderer:
         # Bypass Python sequence unpacking overhead over custom objects by explicit extraction.
         draw_line_v = ray.draw_line_v
         DARKGRAY = ray.DARKGRAY
-        for p0, p1 in self.raw_segments:
-            draw_line_v((p0.x, p0.y), (p1.x, p1.y), DARKGRAY)
+        for p0_t, p1_t in self.raw_segments_tuples:
+            draw_line_v(p0_t, p1_t, DARKGRAY)
 
     def remap_array(self, arr: list[tuple[vec2]], out_min=MAP_OFFSET):
         # Optimization: Pre-calculate constants to avoid repeated math
