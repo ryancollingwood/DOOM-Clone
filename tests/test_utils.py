@@ -19,7 +19,6 @@ import settings
 settings.vec2 = DummyVec2
 settings.ray = MagicMock()
 
-import pytest
 from utils import cross_2d, is_on_front, is_on_back
 
 def test_cross_2d():

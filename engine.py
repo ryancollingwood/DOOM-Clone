@@ -6,7 +6,6 @@ from bsp.bsp_traverser import BSPTreeTraverser
 from camera import Camera
 from input_handler import InputHandler
 from view_renderer import ViewRenderer
-from time import perf_counter
 
 
 class Engine:

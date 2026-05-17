@@ -1,5 +1,5 @@
 from settings import *
-from enum import IntEnum, auto
+from enum import IntEnum
 from texture_id import *
 
 TEX_PATH = 'assets/textures/'
