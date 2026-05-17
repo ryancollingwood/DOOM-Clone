@@ -115,6 +115,8 @@ class BSPTreeBuilder:
     def add_segment(self, splitter_seg: Segment, node: BSPNode):
         self.segments.append(splitter_seg)
         node.segment_id = self.seg_id
+        node.sector_id = splitter_seg.sector_id
+        node.back_sector_id = splitter_seg.back_sector_id
         #
         self.seg_id += 1
 

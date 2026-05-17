@@ -1,5 +1,5 @@
 from settings import *
-from models import Models, WallModel
+from models import Models
 from data_types import *
 
 
@@ -11,6 +11,7 @@ class ViewRenderer:
         self.segments: list[Segment] = engine.bsp_builder.segments
         self.camera = engine.camera
         self.segment_ids_to_draw = self.engine.bsp_traverser.seg_ids_to_draw
+        self.visible_sector_ids = self.engine.bsp_traverser.visible_sector_ids
         self.sectors = self.engine.level_data.sectors
         #
         self.models = Models(engine)

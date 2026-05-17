@@ -76,7 +76,7 @@ def mocked_camera_module():
         'raylib': MagicMock()
     }):
         import settings
-        with patch.multiple(settings, vec3=DummyVec3):
+        with patch.multiple(settings, vec3=DummyVec3, create=True):
             settings.ray.Vector3 = DummyVector3
             # We must import Camera inside the patch context
             if 'camera' in sys.modules:

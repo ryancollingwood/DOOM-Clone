@@ -1,7 +1,5 @@
 from settings import *
-from random import randrange
-from enum import IntEnum, auto
-from typing import Union
+from enum import IntEnum
 from texture_id import *
 
 
@@ -63,7 +61,7 @@ class Segment:
 class BSPNode:
     # Optimization: __slots__ reduces memory footprint from 336 bytes to 112 bytes per instance.
     # BSP tree nodes are heavily allocated and traversed.
-    __slots__ = ('front', 'back', 'splitter_p0', 'splitter_p1', 'splitter_vec', 'splitter_p0_x', 'splitter_p0_y', 'splitter_vec_x', 'splitter_vec_y', 'splitter_c', 'segment_id')
+    __slots__ = ('front', 'back', 'splitter_p0', 'splitter_p1', 'splitter_vec', 'splitter_p0_x', 'splitter_p0_y', 'splitter_vec_x', 'splitter_vec_y', 'splitter_c', 'segment_id', 'sector_id', 'back_sector_id')
 
     def __init__(self):
         #
@@ -83,3 +81,5 @@ class BSPNode:
         self.splitter_c: float = None
         #
         self.segment_id: int = None
+        self.sector_id: int = None
+        self.back_sector_id: int = None
