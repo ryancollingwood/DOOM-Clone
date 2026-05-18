@@ -70,7 +70,8 @@ class ViewRenderer:
         v_zero = VEC3_ZERO
 
         # draw flats
-        for sec_id in self.sectors:
+        # Optimization: Loop over visible_sector_ids instead of all sectors to prevent redundant rendering of floors and ceilings
+        for sec_id in self.visible_sector_ids:
             #
             floor, ceil = self.flat_models[sec_id]
             draw_model(ceil.model, v_zero, 1.0, screen_tint)
