@@ -69,23 +69,29 @@ class ViewRenderer:
         draw_model = ray.draw_model
         v_zero = VEC3_ZERO
 
+        # Optimization: Pre-evaluate boolean options into a tuple to bypass inline conditional evaluation
+        # and cache attributes to local variables to bypass LOAD_ATTR in loops
+        tints = (screen_tint, shade_tint)
+        flat_models = self.flat_models
+        visible_sector_ids = self.visible_sector_ids
+
         # draw flats
         # Optimization: Loop over visible_sector_ids instead of all sectors to prevent redundant rendering of floors and ceilings
-        for sec_id in self.visible_sector_ids:
+        for sec_id in visible_sector_ids:
             #
-            floor, ceil = self.flat_models[sec_id]
+            floor, ceil = flat_models[sec_id]
             draw_model(ceil.model, v_zero, 1.0, screen_tint)
             draw_model(floor.model, v_zero, 1.0, screen_tint)
 
         # draw walls
         for wall in self.walls_to_draw:
-            # Inline conditional tint expression to avoid variable assignment overhead
-            draw_model(wall.model, v_zero, 1.0, shade_tint if wall.is_shaded else screen_tint)
+            # Booleans act as integers; use tuple indexing instead of conditional branching
+            draw_model(wall.model, v_zero, 1.0, tints[wall.is_shaded])
 
         # draw portal_mid walls from back to front
         # Reverse dict values directly (supported in Python 3.8+)
         for wall in reversed(self.mid_walls_to_draw.values()):
-            draw_model(wall.model, v_zero, 1.0, shade_tint if wall.is_shaded else screen_tint)
+            draw_model(wall.model, v_zero, 1.0, tints[wall.is_shaded])
 
     def update_screen_tint(self):
         self.screen_tint = (
