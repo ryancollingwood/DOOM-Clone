@@ -1,6 +1,6 @@
 import pyray as ray
 import glm
-from glm import vec2
+from glm import vec2, vec3, normalize, cross
 
 # resolution
 # WIN_RES = WIN_WIDTH, WIN_HEIGHT = 1920, 1080
