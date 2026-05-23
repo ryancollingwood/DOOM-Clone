@@ -18,7 +18,10 @@ class ViewRenderer:
         self.wall_models = self.models.wall_models
         self.flat_models = self.models.flat_models
         #
-        self.walls_to_draw = set()
+        # Optimization: use a list instead of a set for walls_to_draw.
+        # Deduplication is handled efficiently by tracking processed segment IDs
+        # avoiding hashing overhead for potentially thousands of frames.
+        self.walls_to_draw = []
         self.mid_walls_to_draw = {}  # as ordered set
         #
         self.screen_tint = WHITE_COLOR
@@ -31,7 +34,7 @@ class ViewRenderer:
         # LOAD_ATTR bytecode overhead inside the tight update loop.
         segments = self.segments
         mid_update = self.mid_walls_to_draw.update
-        other_update = self.walls_to_draw.update
+        other_extend = self.walls_to_draw.extend
 
         # Optimization: Track processed segments by their unique original ID using a pre-allocated
         # boolean list instead of a set. This avoids hashing overhead and set lookups in the hot path.
@@ -57,7 +60,7 @@ class ViewRenderer:
             if (mid := seg.mid_wall_models):
                 mid_update(mid)
             if (other := seg.other_wall_models):
-                other_update(other)
+                other_extend(other)
 
     def draw(self):
         # Cache screen_tint and pre-calculate shade_tint to avoid O(N) attribute lookups and conditional checks in the inner render loops
