@@ -50,7 +50,10 @@ class Segment:
         self.up_tex_id: int = up_tex_id
         #
         self.wall_model_ids: set[int] = set()
-        self.mid_wall_models: dict = {}
+        # Optimization: Use list instead of dict for mid_wall_models.
+        # This avoids hashing overhead during `.update()` in `ViewRenderer.update`
+        # and allows faster `.extend()` since we only iterate back-to-front and never lookup by key.
+        self.mid_wall_models: list = []
         self.other_wall_models: list = []
         #
         self.has_portal_low: bool = True
