@@ -22,7 +22,7 @@ class ViewRenderer:
         # Deduplication is handled efficiently by tracking processed segment IDs
         # avoiding hashing overhead for potentially thousands of frames.
         self.walls_to_draw = []
-        self.mid_walls_to_draw = {}  # as ordered set
+        self.mid_walls_to_draw = []
         #
         self.screen_tint = WHITE_COLOR
 
@@ -33,7 +33,7 @@ class ViewRenderer:
         # Cache instance attributes and methods to local variables to avoid O(N)
         # LOAD_ATTR bytecode overhead inside the tight update loop.
         segments = self.segments
-        mid_update = self.mid_walls_to_draw.update
+        mid_extend = self.mid_walls_to_draw.extend
         other_extend = self.walls_to_draw.extend
 
         # Optimization: Track processed segments by their unique original ID using a pre-allocated
@@ -58,7 +58,7 @@ class ViewRenderer:
                 processed_segs[s_id] = True
 
             if (mid := seg.mid_wall_models):
-                mid_update(mid)
+                mid_extend(mid)
             if (other := seg.other_wall_models):
                 other_extend(other)
 
@@ -86,8 +86,7 @@ class ViewRenderer:
             draw_model(wall.model, v_zero, 1.0, shade_tint if wall.is_shaded else screen_tint)
 
         # draw portal_mid walls from back to front
-        # Reverse dict values directly (supported in Python 3.8+)
-        for wall in reversed(self.mid_walls_to_draw.values()):
+        for wall in reversed(self.mid_walls_to_draw):
             draw_model(wall.model, v_zero, 1.0, shade_tint if wall.is_shaded else screen_tint)
 
     def update_screen_tint(self):
