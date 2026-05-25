@@ -79,6 +79,10 @@ class Models:
 
 
 class FlatModel:
+    # Optimization: __slots__ reduces memory footprint per instance by preventing
+    # the creation of a dynamic __dict__ for every FlatModel allocation.
+    __slots__ = ('engine', 'textures', 'sector_segments', 'sectors', 'sector_id', 'sector', 'is_floor', 'model')
+
     def __init__(self, models, sector_id, is_floor=True):
         self.engine = models.engine
         self.textures = models.textures
@@ -210,6 +214,10 @@ class FlatModel:
 
 
 class WallModel:
+    # Optimization: __slots__ reduces memory footprint per instance by preventing
+    # the creation of a dynamic __dict__ for every WallModel allocation.
+    __slots__ = ('engine', 'textures', 'segment', 'sectors', 'wall_type', 'is_shaded', 'model')
+
     def __init__(self, models, segment, wall_type=WallType.SOLID):
         self.engine = models.engine
         self.textures = models.textures
