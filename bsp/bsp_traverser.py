@@ -12,18 +12,34 @@ class BSPTreeTraverser:
         self.pos_2d = self.camera.pos_2d
         #
         self.seg_ids_to_draw = []
-        self.visible_sector_ids = set()
+        # Optimization: Using a pre-allocated boolean list to track processed sector IDs
+        # avoids the expensive hashing overhead of Python sets in the tight traversal loops.
+        self.visible_sector_ids = []
+        self.num_sectors = len(engine.level_data.sectors)
+        self.visible_sector_bool = [False] * self.num_sectors
+        self._add_sector_id = self._add_method
         self.masked_seg_ids_to_draw = []
+
+    def _add_method(self, sec_id):
+        if not self.visible_sector_bool[sec_id]:
+            self.visible_sector_bool[sec_id] = True
+            self.visible_sector_ids.append(sec_id)
 
     def update(self):
         self.seg_ids_to_draw.clear()
         self.masked_seg_ids_to_draw.clear()
+
+        # Fast reset of boolean array using previously visible IDs
+        bool_arr = self.visible_sector_bool
+        for i in self.visible_sector_ids:
+            bool_arr[i] = False
         self.visible_sector_ids.clear()
+
         self.traverse(self.root_node)
 
     def traverse(self, node: BSPNode):
         if node:
-            self._traverse(node, self.pos_2d.x, self.pos_2d.y, self.seg_ids_to_draw.append, self.visible_sector_ids.add)
+            self._traverse(node, self.pos_2d.x, self.pos_2d.y, self.seg_ids_to_draw.append, self._add_sector_id)
 
     def _traverse(self, node: BSPNode, x: float, y: float, append_seg_id, add_sector_id):
         # Inline is_on_front logic with scalars to avoid vec2 object creation in tight loop
