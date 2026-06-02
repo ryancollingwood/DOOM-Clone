@@ -309,8 +309,11 @@ class WallModel:
         #
         bottom, top = self.get_wall_height_data()
         # '-bottom, -top' - flip texture along Y axis
+        # Optimization: Pre-calculate negation of bottom and top to avoid evaluating unary negation repeatedly
+        nbottom = -bottom
+        ntop = -top
         # Optimization: Avoid intermediate tuple variables and list comprehensions
-        tex_coords = glm.array([glm.vec2(0, -bottom), glm.vec2(width, -bottom), glm.vec2(width, -top), glm.vec2(0, -top)])
+        tex_coords = glm.array([glm.vec2(0, nbottom), glm.vec2(width, nbottom), glm.vec2(width, ntop), glm.vec2(0, ntop)])
 
         # get vertices
         # Optimization: Avoid intermediate tuple variables and list comprehensions
