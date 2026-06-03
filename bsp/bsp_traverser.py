@@ -17,7 +17,13 @@ class BSPTreeTraverser:
         self.visible_sector_ids = []
         self.num_sectors = len(engine.level_data.sectors)
         self.visible_sector_bool = [False] * self.num_sectors
+        self._add_sector_id = self._add_method
         self.masked_seg_ids_to_draw = []
+
+    def _add_method(self, sec_id):
+        if not self.visible_sector_bool[sec_id]:
+            self.visible_sector_bool[sec_id] = True
+            self.visible_sector_ids.append(sec_id)
 
     def update(self):
         self.seg_ids_to_draw.clear()
@@ -33,9 +39,9 @@ class BSPTreeTraverser:
 
     def traverse(self, node: BSPNode):
         if node:
-            self._traverse(node, self.pos_2d.x, self.pos_2d.y, self.seg_ids_to_draw.append, self.visible_sector_bool, self.visible_sector_ids.append)
+            self._traverse(node, self.pos_2d.x, self.pos_2d.y, self.seg_ids_to_draw.append, self._add_sector_id)
 
-    def _traverse(self, node: BSPNode, x: float, y: float, append_seg_id, vis_bool, append_vis):
+    def _traverse(self, node: BSPNode, x: float, y: float, append_seg_id, add_sector_id):
         # Inline is_on_front logic with scalars to avoid vec2 object creation in tight loop
         # Cache node.front and node.back to avoid repeated attribute lookups
         front = node.front
@@ -46,28 +52,20 @@ class BSPTreeTraverser:
         # per traversal node evaluation in the hot path.
         if x * node.splitter_vec_y - y * node.splitter_vec_x < node.splitter_c:
             if front:
-                self._traverse(front, x, y, append_seg_id, vis_bool, append_vis)
-
-            # Optimization: Inline the check and append of sector IDs to track flats of
-            # traversed nodes, avoiding the overhead of python function calls in this tight recursive loop.
-            sec_id = node.sector_id
-            if not vis_bool[sec_id]:
-                vis_bool[sec_id] = True
-                append_vis(sec_id)
-
-            back_sec_id = node.back_sector_id
-            if back_sec_id is not None:
-                if not vis_bool[back_sec_id]:
-                    vis_bool[back_sec_id] = True
-                    append_vis(back_sec_id)
+                self._traverse(front, x, y, append_seg_id, add_sector_id)
+            # Optimization: Track sectors of traversed nodes to ensure all flats
+            # in the BSP sub-tree are drawn, even if walls are culled.
+            add_sector_id(node.sector_id)
+            if node.back_sector_id is not None:
+                add_sector_id(node.back_sector_id)
 
             append_seg_id(node.segment_id)
             #
             if back:
-                self._traverse(back, x, y, append_seg_id, vis_bool, append_vis)
+                self._traverse(back, x, y, append_seg_id, add_sector_id)
         else:
             if back:
-                self._traverse(back, x, y, append_seg_id, vis_bool, append_vis)
+                self._traverse(back, x, y, append_seg_id, add_sector_id)
             #
             if front:
-                self._traverse(front, x, y, append_seg_id, vis_bool, append_vis)
+                self._traverse(front, x, y, append_seg_id, add_sector_id)
