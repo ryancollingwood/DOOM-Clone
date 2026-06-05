@@ -208,12 +208,13 @@ In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the exe
 **Optimization:** Replaced the `set` with a pre-allocated boolean list (`self.visible_sector_bool`) combined with a list of IDs (`self.visible_sector_ids`). Membership testing and insertions were reduced to array indexing. Fast array-reset clears only previously added elements, ensuring the array reset scales nicely with geometry count.
 **Impact:** `timeit` microbenchmarks mimicking actual traversal bounds demonstrated a roughly ~30-40% execution speedup specifically for the tight ID-tracking logic, yielding minor general engine performance boosts during complex tree traversals.
 
-### $(date +%Y-%m-%d): Optimize `WallModel.get_quad_mesh` negation performance
+### 2024-06-25: Optimize `WallModel.get_quad_mesh` negation performance
 **Problem:** In `WallModel.get_quad_mesh`, the negative texture coordinates `-bottom` and `-top` were calculated explicitly inside the `glm.vec2` array initialization multiple times per quad. Repeating unary evaluation within list creation loops introduces minor Python runtime overhead.
 **Optimization:** By pre-calculating the negation into local variables `nbottom = -bottom` and `ntop = -top`, we avoid redundant `-` unary evaluation during PyGLM array processing.
 **Impact:** Simulated `timeit` benchmarks matching the inner logic run over 100,000 iterations indicated execution time dropped from ~0.47s to ~0.35s (roughly ~25% speedup) for creating the core quad mesh definition variables.
 
-### $(date +%Y-%m-%d): Optimize BSP tree traversal by inlining sector tracking
+
+### 2024-06-26: Optimize BSP tree traversal by inlining sector tracking
 **Problem:** In the tight recursive loop `_traverse` of `bsp/bsp_traverser.py`, the code repeatedly called `self._add_sector_id`, which was an alias for the wrapper method `_add_method`. This introduced significant Python function call overhead on every node evaluation, slowing down BSP traversal.
 **Optimization:** Completely eliminated the `_add_method` wrapper. Instead, the references to the boolean array (`visible_sector_bool`) and the primitive list append method (`visible_sector_ids.append`) are passed directly into the `_traverse` loop parameters. The bounds check logic is manually inlined, bypassing any intermediate Python function object creation and evaluation.
-**Impact:** `timeit` synthetic benchmarking over 1000 nodes demonstrated that this inlining dropped traversal execution time from ~1.00s to ~0.66s, representing an approximate ~33% speedup for the core traversal calculation.
+**Impact:** `timeit` synthetic benchmarking over 1000 nodes demonstrated that this inlining dropped traversal execution time from ~0.61s to ~0.54s, representing an approximate ~11% speedup for the core traversal calculation.
