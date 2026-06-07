@@ -39,9 +39,9 @@ class BSPTreeTraverser:
 
     def traverse(self, node: BSPNode):
         if node:
-            self._traverse(node, self.pos_2d.x, self.pos_2d.y, self.seg_ids_to_draw.append, self._add_sector_id)
+            self._traverse(node, self.pos_2d.x, self.pos_2d.y, self.seg_ids_to_draw.append, self.visible_sector_bool, self.visible_sector_ids.append)
 
-    def _traverse(self, node: BSPNode, x: float, y: float, append_seg_id, add_sector_id):
+    def _traverse(self, node: BSPNode, x: float, y: float, append_seg_id, visible_sector_bool, visible_sector_ids_append):
         # Inline is_on_front logic with scalars to avoid vec2 object creation in tight loop
         # Cache node.front and node.back to avoid repeated attribute lookups
         front = node.front
@@ -52,20 +52,27 @@ class BSPTreeTraverser:
         # per traversal node evaluation in the hot path.
         if x * node.splitter_vec_y - y * node.splitter_vec_x < node.splitter_c:
             if front:
-                self._traverse(front, x, y, append_seg_id, add_sector_id)
+                self._traverse(front, x, y, append_seg_id, visible_sector_bool, visible_sector_ids_append)
             # Optimization: Track sectors of traversed nodes to ensure all flats
-            # in the BSP sub-tree are drawn, even if walls are culled.
-            add_sector_id(node.sector_id)
-            if node.back_sector_id is not None:
-                add_sector_id(node.back_sector_id)
+            # in the BSP sub-tree are drawn, even if walls are culled. Inlining this logic avoids
+            # intermediate Python function call overhead.
+            sec_id = node.sector_id
+            if not visible_sector_bool[sec_id]:
+                visible_sector_bool[sec_id] = True
+                visible_sector_ids_append(sec_id)
+
+            sec_id = node.back_sector_id
+            if sec_id is not None and not visible_sector_bool[sec_id]:
+                visible_sector_bool[sec_id] = True
+                visible_sector_ids_append(sec_id)
 
             append_seg_id(node.segment_id)
             #
             if back:
-                self._traverse(back, x, y, append_seg_id, add_sector_id)
+                self._traverse(back, x, y, append_seg_id, visible_sector_bool, visible_sector_ids_append)
         else:
             if back:
-                self._traverse(back, x, y, append_seg_id, add_sector_id)
+                self._traverse(back, x, y, append_seg_id, visible_sector_bool, visible_sector_ids_append)
             #
             if front:
-                self._traverse(front, x, y, append_seg_id, add_sector_id)
+                self._traverse(front, x, y, append_seg_id, visible_sector_bool, visible_sector_ids_append)
