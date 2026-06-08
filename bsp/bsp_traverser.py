@@ -17,13 +17,7 @@ class BSPTreeTraverser:
         self.visible_sector_ids = []
         self.num_sectors = len(engine.level_data.sectors)
         self.visible_sector_bool = [False] * self.num_sectors
-        self._add_sector_id = self._add_method
         self.masked_seg_ids_to_draw = []
-
-    def _add_method(self, sec_id):
-        if not self.visible_sector_bool[sec_id]:
-            self.visible_sector_bool[sec_id] = True
-            self.visible_sector_ids.append(sec_id)
 
     def update(self):
         self.seg_ids_to_draw.clear()
@@ -39,9 +33,9 @@ class BSPTreeTraverser:
 
     def traverse(self, node: BSPNode):
         if node:
-            self._traverse(node, self.pos_2d.x, self.pos_2d.y, self.seg_ids_to_draw.append, self._add_sector_id)
+            self._traverse(node, self.pos_2d.x, self.pos_2d.y, self.seg_ids_to_draw.append, self.visible_sector_bool, self.visible_sector_ids.append)
 
-    def _traverse(self, node: BSPNode, x: float, y: float, append_seg_id, add_sector_id):
+    def _traverse(self, node: BSPNode, x: float, y: float, append_seg_id, visible_sector_bool, visible_sector_ids_append):
         # Inline is_on_front logic with scalars to avoid vec2 object creation in tight loop
         # Cache node.front and node.back to avoid repeated attribute lookups
         front = node.front
@@ -52,20 +46,28 @@ class BSPTreeTraverser:
         # per traversal node evaluation in the hot path.
         if x * node.splitter_vec_y - y * node.splitter_vec_x < node.splitter_c:
             if front:
-                self._traverse(front, x, y, append_seg_id, add_sector_id)
+                self._traverse(front, x, y, append_seg_id, visible_sector_bool, visible_sector_ids_append)
             # Optimization: Track sectors of traversed nodes to ensure all flats
-            # in the BSP sub-tree are drawn, even if walls are culled.
-            add_sector_id(node.sector_id)
-            if node.back_sector_id is not None:
-                add_sector_id(node.back_sector_id)
+            # in the BSP sub-tree are drawn, even if walls are culled. Inlining this logic
+            # avoids Python function call wrapper overhead completely in the recursive hot path.
+            s_id = node.sector_id
+            if not visible_sector_bool[s_id]:
+                visible_sector_bool[s_id] = True
+                visible_sector_ids_append(s_id)
+
+            b_id = node.back_sector_id
+            if b_id is not None:
+                if not visible_sector_bool[b_id]:
+                    visible_sector_bool[b_id] = True
+                    visible_sector_ids_append(b_id)
 
             append_seg_id(node.segment_id)
             #
             if back:
-                self._traverse(back, x, y, append_seg_id, add_sector_id)
+                self._traverse(back, x, y, append_seg_id, visible_sector_bool, visible_sector_ids_append)
         else:
             if back:
-                self._traverse(back, x, y, append_seg_id, add_sector_id)
+                self._traverse(back, x, y, append_seg_id, visible_sector_bool, visible_sector_ids_append)
             #
             if front:
-                self._traverse(front, x, y, append_seg_id, add_sector_id)
+                self._traverse(front, x, y, append_seg_id, visible_sector_bool, visible_sector_ids_append)
