@@ -72,11 +72,15 @@ class ViewRenderer:
         draw_model = ray.draw_model
         v_zero = VEC3_ZERO
 
+        # Cache flat_models to avoid LOAD_ATTR bytecode overhead inside the tight rendering loops.
+        # (Note: target of a for loop is only evaluated once via GET_ITER)
+        flat_models = self.flat_models
+
         # draw flats
         # Optimization: Loop over visible_sector_ids instead of all sectors to prevent redundant rendering of floors and ceilings
         for sec_id in self.visible_sector_ids:
             #
-            floor, ceil = self.flat_models[sec_id]
+            floor, ceil = flat_models[sec_id]
             draw_model(ceil.model, v_zero, 1.0, screen_tint)
             draw_model(floor.model, v_zero, 1.0, screen_tint)
 
