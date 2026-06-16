@@ -86,9 +86,10 @@ class ViewRenderer:
 
         # draw flats
         # Optimization: Loop over visible_sector_ids instead of all sectors to prevent redundant rendering of floors and ceilings
+        flat_models = self.flat_models
         for sec_id in self.visible_sector_ids:
             #
-            floor, ceil = self.flat_models[sec_id]
+            floor, ceil = flat_models[sec_id]
             draw_model(ceil.model, v_zero, 1.0, screen_tint)
             draw_model(floor.model, v_zero, 1.0, screen_tint)
 
