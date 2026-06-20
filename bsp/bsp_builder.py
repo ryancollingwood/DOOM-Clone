@@ -62,15 +62,11 @@ class BSPTreeBuilder:
             numerator = dx * node.splitter_vec_y - node.splitter_vec_x * dy
             denominator = node.splitter_vec_x * segment_vector.y - segment_vector.x * node.splitter_vec_y
 
-            # Optimization: Avoid abs() function call overhead using inline conditional expressions
-            abs_denom = denominator if denominator >= 0 else -denominator
-            abs_num = numerator if numerator >= 0 else -numerator
-
             # if the denominator is zero the lines are parallel
-            denominator_is_zero = abs_denom < EPS
+            denominator_is_zero = abs(denominator) < EPS
 
             # segments are collinear if they are parallel and the numerator is zero
-            numerator_is_zero = abs_num < EPS
+            numerator_is_zero = abs(numerator) < EPS
             #
             if denominator_is_zero and numerator_is_zero:
                 append_front(segment)
