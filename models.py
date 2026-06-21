@@ -301,9 +301,9 @@ class WallModel:
             nx, nz = 0, 0
         else:
             nx, nz = -dz / width, dx / width
-        normal = vec3(nx, 0, nz)
-        # Optimization: Construct explicit list to avoid list multiplication overhead
-        normals = glm.array([normal, normal, normal, normal])
+
+        # Optimization: Pass scalars directly to from_numbers to avoid intermediate PyGLM object allocations and list overhead
+        normals = glm.array.from_numbers(glm.float32, nx, 0, nz, nx, 0, nz, nx, 0, nz, nx, 0, nz)
 
         # get tex coords
         #
@@ -312,12 +312,12 @@ class WallModel:
         # Optimization: Pre-calculate negation of bottom and top to avoid evaluating unary negation repeatedly
         nbottom = -bottom
         ntop = -top
-        # Optimization: Avoid intermediate tuple variables and list comprehensions
-        tex_coords = glm.array([glm.vec2(0, nbottom), glm.vec2(width, nbottom), glm.vec2(width, ntop), glm.vec2(0, ntop)])
+        # Optimization: Pass scalars directly to from_numbers to avoid intermediate PyGLM object allocations and list overhead
+        tex_coords = glm.array.from_numbers(glm.float32, 0, nbottom, width, nbottom, width, ntop, 0, ntop)
 
         # get vertices
-        # Optimization: Avoid intermediate tuple variables and list comprehensions
-        vertices = glm.array([vec3(x0, bottom, z0), vec3(x1, bottom, z1), vec3(x1, top, z1), vec3(x0, top, z0)])
+        # Optimization: Pass scalars directly to from_numbers to avoid intermediate PyGLM object allocations and list overhead
+        vertices = glm.array.from_numbers(glm.float32, x0, bottom, z0, x1, bottom, z1, x1, top, z1, x0, top, z0)
 
         # get indices
         # Optimization: Pass indices directly to avoid list allocation and tuple unpacking overhead
