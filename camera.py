@@ -89,7 +89,9 @@ class Camera:
         dt = self.app.dt
         if not math.isfinite(dt) or dt < 0:
             dt = 0
-        dt = min(dt, MAX_SAFE_DT)
+        # Optimization: Standard min() function calls introduce noticeable overhead in Python hot loops.
+        # Replacing them with inline ternary operators avoids function call overhead and is significantly faster.
+        dt = dt if dt < MAX_SAFE_DT else MAX_SAFE_DT
         #
         self.speed = CAM_SPEED * dt
         self.rot_speed = CAM_ROT_SPEED * dt

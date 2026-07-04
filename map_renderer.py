@@ -43,7 +43,11 @@ class MapRenderer:
         dx = self.x_max - self.x_min
         dy = self.y_max - self.y_min
         #
-        delta = min(MAP_WIDTH / dx, MAP_HEIGHT / dy)
+        # Optimization: Standard min() function calls introduce noticeable overhead in Python hot loops.
+        # Replacing them with inline ternary operators avoids function call overhead and is significantly faster.
+        delta_x = MAP_WIDTH / dx
+        delta_y = MAP_HEIGHT / dy
+        delta = delta_x if delta_x < delta_y else delta_y
         x_out_max = delta * dx
         y_out_max = delta * dy
         return x_out_max, y_out_max
