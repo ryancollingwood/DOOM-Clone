@@ -186,13 +186,25 @@ class FlatModel:
         normals = glm.array([normal] * vertex_count)
 
         # get vertices
-        vertices = self.get_vertices(sector_verts)
-        vertices = glm.array(vertices)
+        # Optimization: Inlined get_vertices and pass flattened lists of scalars directly to avoid PyGLM wrapper overhead
+        height = self.sector.floor_h if self.is_floor else self.sector.ceil_h
+
+        nums_vertices = []
+        extend_vert = nums_vertices.extend
+        for v in sector_verts:
+            extend_vert((v[0], height, v[1]))
+        vertices = glm.array.from_numbers(glm.float32, *nums_vertices)
 
         # get tex coords
-        tex_coords = [glm.vec2(v) for v in sector_verts]
-        tex_coords = tex_coords if self.is_floor else [glm.vec2(v.x, -v.y) for v in tex_coords]
-        tex_coords = glm.array(tex_coords)
+        nums_tex = []
+        extend_tex = nums_tex.extend
+        if self.is_floor:
+            for v in sector_verts:
+                extend_tex(v)
+        else:
+            for v in sector_verts:
+                extend_tex((v[0], -v[1]))
+        tex_coords = glm.array.from_numbers(glm.float32, *nums_tex)
 
         # get indices
         indices = self.get_indices(triangles, sector_verts)
