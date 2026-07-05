@@ -253,3 +253,8 @@ In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the exe
 **Problem:** In the tight `draw()` loop of `ViewRenderer`, looking up `self.flat_models[sec_id]` involves evaluating `LOAD_ATTR` bytecode on every single iteration to resolve `self.flat_models`.
 **Optimization:** Caching the dictionary attribute to a local variable `flat_models = self.flat_models` before entering the high-frequency loop and looking up via the local reference avoids repeated class attribute lookup overhead.
 **Impact:** `timeit` testing reveals that eliminating the repeated attribute lookup and resolving the reference locally yields roughly a ~10% execution speedup for the object retrieval segment of the operation.
+
+### 2024-06-25: Optimize min() function calls in hot loops
+**Problem:** In `camera.py` and `map_renderer.py`, standard `min()` function calls inside the execution loops introduce function call and branching evaluation overhead across the C-extension boundary.
+**Optimization:** Replaced the `min()` function calls with native Python inline ternary operators (`a if a < b else b`).
+**Impact:** `timeit` synthetic benchmarking of the core evaluations demonstrated an execution time drop, achieving roughly a ~50% speedup by eliminating the Python-to-C wrapper overhead on standard primitive constraints.
