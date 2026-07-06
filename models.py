@@ -117,21 +117,24 @@ class FlatModel:
             adj[p1].append(p0)
 
         start = sector_segments[0][0]
-        outline = [start]
+        target_len = len(sector_segments)
+
+        # Optimization: Pre-allocate the outline list to its exact target length.
+        # This avoids dynamic array resizing overhead and repeated `len()` checks inside a while loop.
+        outline = [None] * target_len
+        outline[0] = start
+
         prev = None
         curr = start
 
-        # Optimization: Caching the length of `sector_segments` into a local variable before the loop
-        # removes redundant function calls and arithmetic in the while loop condition.
-        target_len = len(sector_segments) + 1
-        while len(outline) != target_len:
+        for i in range(1, target_len):
             neighbors = adj[curr]
             next_node = neighbors[0] if neighbors[0] != prev else neighbors[1]
-            outline.append(next_node)
+            outline[i] = next_node
             prev = curr
             curr = next_node
 
-        return outline[:-1]
+        return outline
 
     def get_triangles(self):
         segs = self.sector_segments[self.sector_id]
