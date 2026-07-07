@@ -1,4 +1,5 @@
 import math
+from math import hypot
 from settings import *
 
 
@@ -76,11 +77,11 @@ class Camera:
         self.right = cross(self.forward, self.fake_up)
 
     def get_forward(self) -> glm.vec3:
-        # Optimization: Inline scalar math to avoid intermediate object allocation overhead and C-extension function calls.
+        # Optimization: Using math.hypot is measurably faster than manual inline power arithmetic
         dx = self.target.x - self.pos_3d.x
         dy = self.target.y - self.pos_3d.y
         dz = self.target.z - self.pos_3d.z
-        length = (dx * dx + dy * dy + dz * dz) ** 0.5
+        length = hypot(dx, dy, dz)
         if length == 0:
             return vec3(0)
         return vec3(dx / length, dy / length, dz / length)
