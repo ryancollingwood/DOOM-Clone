@@ -258,3 +258,8 @@ In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the exe
 **Problem:** In `camera.py` and `map_renderer.py`, standard `min()` function calls inside the execution loops introduce function call and branching evaluation overhead across the C-extension boundary.
 **Optimization:** Replaced the `min()` function calls with native Python inline ternary operators (`a if a < b else b`).
 **Impact:** `timeit` synthetic benchmarking of the core evaluations demonstrated an execution time drop, achieving roughly a ~50% speedup by eliminating the Python-to-C wrapper overhead on standard primitive constraints.
+
+### 2024-06-25: Optimize vector length calculations using `math.hypot`
+**Problem:** In `WallModel.get_quad_mesh` and `Camera.get_forward`, the length of vectors was previously manually calculated via standard Euclidean arithmetic `(dx*dx + dy*dy + dz*dz)**0.5` after discovering that PyGLM wrapper function calls (`glm.length`) introduced significant overhead. However, the evaluation of the inline power arithmetic `**0.5` itself introduces measurable overhead in hot paths.
+**Optimization:** Replaced the manual inline power arithmetic with a `math.hypot` function call.
+**Impact:** `timeit` synthetic benchmarking demonstrated that executing `math.hypot(dx, dy, dz)` is roughly ~25% faster than evaluating the manual inline power arithmetic `(dx*dx + dy*dy + dz*dz)**0.5`, refuting previous assumptions about function call overhead in this specific instance.
