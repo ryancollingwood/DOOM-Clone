@@ -14,11 +14,7 @@ class Textures:
         self.flats = self.get_textures(FLAT_TEX_PATH, FlatTexID)
 
     def get_textures(self, dir_path: str, texture_ids: IntEnum):
-        textures = []
-        for i in range(len(texture_ids)):
-            texture = self.load_texture(dir_path + f'{i}.png', texture_ids)
-            textures.append(texture)
-        return textures
+        return [self.load_texture(dir_path + f'{i}.png', texture_ids) for i in range(len(texture_ids))]
 
     def load_texture(self, file_path, texture_ids):
         image = ray.load_image(file_path)
