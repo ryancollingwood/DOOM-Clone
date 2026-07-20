@@ -48,6 +48,8 @@ class BSPTreeBuilder:
         append_front = front_segs.append
         append_back = back_segs.append
 
+        n_EPS = -EPS
+
         for segment in input_segments[1:]:
             #
             segment_start = segment.pos[0]
@@ -63,10 +65,11 @@ class BSPTreeBuilder:
             denominator = node.splitter_vec_x * segment_vector.y - segment_vector.x * node.splitter_vec_y
 
             # if the denominator is zero the lines are parallel
-            denominator_is_zero = abs(denominator) < EPS
+            # Optimization: Replaced abs() with inline bounds checking to bypass function call overhead.
+            denominator_is_zero = n_EPS < denominator < EPS
 
             # segments are collinear if they are parallel and the numerator is zero
-            numerator_is_zero = abs(numerator) < EPS
+            numerator_is_zero = n_EPS < numerator < EPS
             #
             if denominator_is_zero and numerator_is_zero:
                 append_front(segment)
