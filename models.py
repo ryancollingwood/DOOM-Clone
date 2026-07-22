@@ -1,3 +1,4 @@
+import math
 from settings import *
 from data_types import *
 from ground.base import get_context
@@ -296,12 +297,13 @@ class WallModel:
         # get seg coords
         (x0, z0), (x1, z1) = self.segment.pos
 
-        # Optimization: Inlining scalar math (dx, dz) and (dx*dx + dz*dz)**0.5 avoids
-        # function call overhead (glm.length, glm.normalize) and intermediate Python object
-        # allocations (vec3) in this hot path, yielding roughly a ~3.8x speedup.
+        # Optimization: Inlining scalar math (dx, dz) and using math.hypot avoids
+        # PyGLM function call overhead (glm.length, glm.normalize) and intermediate Python object
+        # allocations (vec3) in this hot path, while utilizing optimized C-level math execution,
+        # yielding significant speedups.
         dx = x1 - x0
         dz = z1 - z0
-        width = (dx * dx + dz * dz) ** 0.5
+        width = math.hypot(dx, dz)
 
         # get normals
         if width == 0:
