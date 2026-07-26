@@ -77,10 +77,11 @@ class Camera:
 
     def get_forward(self) -> glm.vec3:
         # Optimization: Inline scalar math to avoid intermediate object allocation overhead and C-extension function calls.
+        # Use math.hypot for length as it executes faster in C than **0.5 in Python.
         dx = self.target.x - self.pos_3d.x
         dy = self.target.y - self.pos_3d.y
         dz = self.target.z - self.pos_3d.z
-        length = (dx * dx + dy * dy + dz * dz) ** 0.5
+        length = math.hypot(dx, dy, dz)
         if length == 0:
             return vec3(0)
         return vec3(dx / length, dy / length, dz / length)
