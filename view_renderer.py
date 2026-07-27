@@ -69,9 +69,14 @@ class ViewRenderer:
                 processed_segs[s_id] = True
                 processed_ids_append(s_id)
 
-            if (mid := seg.mid_wall_models):
+            # Optimization: In extremely tight loops, replacing the walrus operator with a
+            # traditional local variable assignment followed by an `if` check avoids slight
+            # bytecode evaluation overhead and executes faster for simple property checks.
+            mid = seg.mid_wall_models
+            if mid:
                 mid_extend(mid)
-            if (other := seg.other_wall_models):
+            other = seg.other_wall_models
+            if other:
                 other_extend(other)
 
     def draw(self):
