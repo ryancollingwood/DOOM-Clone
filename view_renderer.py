@@ -61,13 +61,17 @@ class ViewRenderer:
             # execution blocks and nested branch depth, skipping early if already processed.
             # Since segment IDs are guaranteed to be populated by the level builder,
             # we can use them to efficiently skip processing walls for split segments.
-            # However, if s_id is somehow None (e.g. newly instantiated without threading ID),
-            # fall back to evaluation to ensure no geometry is lost.
-            if s_id is not None and s_id < num_segs:
+            # Optimization: Replaced explicit `if s_id is not None and s_id < num_segs` bounds
+            # checking with EAFP (Easier to Ask for Forgiveness than Permission) try-except block.
+            # The exception path is extremely rare (e.g. newly instantiated without threading ID)
+            # so the fast-path avoiding branching logic is measurably faster in the hot rendering loop.
+            try:
                 if processed_segs[s_id]:
                     continue
                 processed_segs[s_id] = True
                 processed_ids_append(s_id)
+            except (TypeError, IndexError):
+                pass
 
             if (mid := seg.mid_wall_models):
                 mid_extend(mid)
