@@ -58,10 +58,10 @@ class BSPTreeBuilder:
 
             # Optimization: Inline cross_2d and scalar mathematical evaluation to avoid function call
             # and new object (vec2) creation overheads for each segment in the recursive loop.
-            dx = segment_start.x - node.splitter_p0_x
-            dy = segment_start.y - node.splitter_p0_y
+            segment_start_x = segment_start.x
+            segment_start_y = segment_start.y
 
-            numerator = dx * node.splitter_vec_y - node.splitter_vec_x * dy
+            numerator = segment_start_x * node.splitter_vec_y - segment_start_y * node.splitter_vec_x - node.splitter_c
             denominator = node.splitter_vec_x * segment_vector.y - segment_vector.x * node.splitter_vec_y
 
             # if the denominator is zero the lines are parallel
