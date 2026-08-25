@@ -33,19 +33,20 @@ def test_input_handler_init(mock_engine):
     assert handler.engine == mock_engine
     assert handler.camera == mock_engine.camera
 
-@pytest.mark.parametrize("key, method_name", [
-    (Key.FORWARD, "step_forward"),
-    (Key.BACK, "step_back"),
-    (Key.STRAFE_RIGHT, "step_right"),
-    (Key.STRAFE_LEFT, "step_left"),
-    (Key.UP, "step_up"),
-    (Key.DOWN, "step_down"),
+@pytest.mark.parametrize("key_name, method_name", [
+    ("FORWARD", "step_forward"),
+    ("BACK", "step_back"),
+    ("STRAFE_RIGHT", "step_right"),
+    ("STRAFE_LEFT", "step_left"),
+    ("UP", "step_up"),
+    ("DOWN", "step_down"),
 ])
-def test_camera_movement(mock_engine, key, method_name):
+def test_camera_movement(mock_engine, key_name, method_name):
     handler = InputHandler(mock_engine)
 
+    target_key = getattr(Key, key_name)
     # Mock is_key_down to return True only for the specific key
-    with patch('input_handler.is_key_down', side_effect=lambda k: k == key):
+    with patch('input_handler.is_key_down', side_effect=lambda k: k == target_key):
         with patch('input_handler.is_key_pressed', return_value=False):
             handler.update()
 

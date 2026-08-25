@@ -20,6 +20,9 @@ settings.vec2 = DummyVec2
 settings.ray = MagicMock()
 settings.MAP_OFFSET = 10
 
+mock_glm = sys.modules['glm']
+mock_glm.vec2 = DummyVec2
+
 import pytest
 from map_renderer import MapRenderer
 
