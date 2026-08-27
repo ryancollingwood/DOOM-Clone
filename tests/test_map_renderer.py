@@ -18,7 +18,9 @@ class DummyVec2:
 import settings
 settings.vec2 = DummyVec2
 settings.ray = MagicMock()
-settings.MAP_OFFSET = 10
+
+import map_renderer
+map_renderer.vec2 = DummyVec2
 
 import pytest
 from map_renderer import MapRenderer
@@ -45,10 +47,14 @@ def test_remap_array():
     renderer.x_out_max, renderer.y_out_max = 800, 600
     renderer.dx = 100
     renderer.dy = 100
-    renderer.cx = (800 - 10) / 100
-    renderer.cy = (600 - 10) / 100
-    renderer.ox = 10
-    renderer.oy = 10
+
+    # We use the original MAP_OFFSET from map_renderer since we didn't patch it before import
+    MAP_OFFSET = map_renderer.MAP_OFFSET
+
+    renderer.cx = (800 - MAP_OFFSET) / 100
+    renderer.cy = (600 - MAP_OFFSET) / 100
+    renderer.ox = MAP_OFFSET
+    renderer.oy = MAP_OFFSET
 
     arr = [
         (DummyVec2(0, 0), DummyVec2(50, 50)),
@@ -57,14 +63,14 @@ def test_remap_array():
 
     remapped = renderer.remap_array(arr)
 
-    assert remapped[0][0].x == pytest.approx(10)
-    assert remapped[0][0].y == pytest.approx(10)
+    assert remapped[0][0].x == pytest.approx(MAP_OFFSET)
+    assert remapped[0][0].y == pytest.approx(MAP_OFFSET)
 
-    assert remapped[0][1].x == pytest.approx(405)
-    assert remapped[0][1].y == pytest.approx(305)
+    assert remapped[0][1].x == pytest.approx(50 * renderer.cx + MAP_OFFSET)
+    assert remapped[0][1].y == pytest.approx(50 * renderer.cy + MAP_OFFSET)
 
     assert remapped[1][0].x == pytest.approx(800)
     assert remapped[1][0].y == pytest.approx(600)
 
     assert remapped[1][1].x == pytest.approx(800)
-    assert remapped[1][1].y == pytest.approx(10)
+    assert remapped[1][1].y == pytest.approx(MAP_OFFSET)
