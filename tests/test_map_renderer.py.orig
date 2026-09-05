@@ -16,7 +16,7 @@ class DummyVec2:
 
 # Mock vec2 inside settings
 import settings
-settings.vec2 = lambda x, y: DummyVec2(x, y)
+settings.vec2 = DummyVec2
 settings.ray = MagicMock()
 settings.MAP_OFFSET = 10
 
