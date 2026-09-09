@@ -4,6 +4,7 @@ from ground.base import get_context
 from sect.triangulation import Triangulation
 from textures import Textures
 import collections
+import math
 
 ctx = get_context()
 Contour, Point, Polygon = ctx.contour_cls, ctx.point_cls, ctx.polygon_cls
@@ -301,7 +302,8 @@ class WallModel:
         # allocations (vec3) in this hot path, yielding roughly a ~3.8x speedup.
         dx = x1 - x0
         dz = z1 - z0
-        width = (dx * dx + dz * dz) ** 0.5
+        # Optimization: In modern Python, math.hypot is faster than inline power arithmetic.
+        width = math.hypot(dx, dz)
 
         # get normals
         if width == 0:
