@@ -1,9 +1,10 @@
+import math
+import collections
 from settings import *
 from data_types import *
 from ground.base import get_context
 from sect.triangulation import Triangulation
 from textures import Textures
-import collections
 
 ctx = get_context()
 Contour, Point, Polygon = ctx.contour_cls, ctx.point_cls, ctx.polygon_cls
@@ -294,14 +295,18 @@ class WallModel:
         vertex_count = 4
 
         # get seg coords
-        (x0, z0), (x1, z1) = self.segment.pos
+        # Optimization: Bypass sequence unpacking overhead by extracting attributes directly.
+        # math.hypot is also implemented in C and runs faster for vector length calculations.
+        p0, p1 = self.segment.pos
+        x0, z0 = p0.x, p0.y
+        x1, z1 = p1.x, p1.y
 
-        # Optimization: Inlining scalar math (dx, dz) and (dx*dx + dz*dz)**0.5 avoids
+        # Optimization: Inlining scalar math (dx, dz) avoids
         # function call overhead (glm.length, glm.normalize) and intermediate Python object
-        # allocations (vec3) in this hot path, yielding roughly a ~3.8x speedup.
+        # allocations (vec3) in this hot path.
         dx = x1 - x0
         dz = z1 - z0
-        width = (dx * dx + dz * dz) ** 0.5
+        width = math.hypot(dx, dz)
 
         # get normals
         if width == 0:
