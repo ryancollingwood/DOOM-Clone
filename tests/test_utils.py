@@ -65,3 +65,12 @@ def test_is_on_back():
     assert is_on_back(v1, v2) is not is_on_front(v1, v2)
     assert is_on_back(v1, v2) is True
     assert is_on_back(v2, v1) is False
+
+def test_list_level_files():
+    from utils import list_level_files
+    files = list_level_files()
+    assert isinstance(files, list)
+    # the repo has levels/test_level.py at least
+    assert "test_level.py" in files
+    # Check that it's sorted
+    assert files == sorted(files)

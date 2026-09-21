@@ -1,3 +1,4 @@
+import os
 from settings import *
 
 
@@ -12,3 +13,13 @@ def is_on_front(vec_0: vec2, vec_1: vec2):
 
 def is_on_back(vec_0: vec2, vec_1: vec2):
     return not is_on_front(vec_0, vec_1)
+
+def list_level_files():
+    utils_dir = os.path.dirname(os.path.abspath(__file__))
+    levels_dir = os.path.join(utils_dir, 'levels')
+
+    if not os.path.isdir(levels_dir):
+        return []
+
+    files = [f for f in os.listdir(levels_dir) if os.path.isfile(os.path.join(levels_dir, f))]
+    return sorted(files)
