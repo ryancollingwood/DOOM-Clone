@@ -1,0 +1,1 @@
+- (Session 6343300676678452539) When a function resolves paths relative to its own source file using `os.path.abspath(__file__)`, the implementation is portable across working directories and correctly follows `os.path`-based conventions.
