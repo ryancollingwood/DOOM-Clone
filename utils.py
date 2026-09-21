@@ -23,3 +23,18 @@ def list_level_files():
 
     files = [f for f in os.listdir(levels_dir) if os.path.isfile(os.path.join(levels_dir, f))]
     return sorted(files)
+
+
+def list_texture_files():
+    utils_dir = os.path.dirname(os.path.abspath(__file__))
+    assets_dir = os.path.join(utils_dir, 'assets')
+
+    if not os.path.isdir(assets_dir):
+        return []
+
+    texture_files = []
+    for root, _, files in os.walk(assets_dir):
+        for file in files:
+            texture_files.append(file)
+
+    return sorted(texture_files)

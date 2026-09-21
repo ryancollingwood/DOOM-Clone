@@ -74,3 +74,12 @@ def test_list_level_files():
     assert "test_level.py" in files
     # Check that it's sorted
     assert files == sorted(files)
+
+def test_list_texture_files():
+    from utils import list_texture_files
+    files = list_texture_files()
+    assert isinstance(files, list)
+    # the repo has assets/textures/flats/1.png at least
+    assert "1.png" in files
+    # Check that it's sorted
+    assert files == sorted(files)
