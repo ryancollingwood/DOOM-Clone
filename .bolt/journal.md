@@ -283,3 +283,8 @@ In synthetic benchmarking with 1000 outline vertices and 2000 triangles, the exe
 **Problem:** In the tight frame-by-frame rendering loop `update` of `view_renderer.py`, explicit condition evaluations for bounds and type checking (`if s_id is not None and s_id < num_segs:`) introduced measurable Python evaluation overhead.
 **Optimization:** Replaced the explicit LBYL (Look Before You Leap) pattern with an EAFP (Easier to Ask for Forgiveness than Permission) pattern using a `try...except (TypeError, IndexError):` block. Since missing or out-of-bounds IDs are extremely rare, we avoid evaluating the conditionals on every single iteration.
 **Impact:** `timeit` synthetic benchmarking over 1000 items and 1000 runs demonstrated that the execution speed drops from ~4.9s to ~3.5s, delivering approximately a ~28% performance improvement by taking advantage of Python 3.11+'s zero-cost try block setup during the hot path.
+
+### 2026-09-23: Optimize MapRenderer.get_bounds by reducing conditional checks
+**Problem:** In `map_renderer.py`, the `get_bounds` method performs 8 individual conditional checks per segment to determine the bounding box. This introduces unnecessary evaluation overhead.
+**Optimization:** Refactored the loop to compare the segment's coordinates against each other first (e.g., `p0.x < p1.x`) before comparing against the global min/max, reducing the total number of conditional checks required per segment.
+**Impact:** `timeit` benchmarks indicate an execution speedup of approximately ~10%.
