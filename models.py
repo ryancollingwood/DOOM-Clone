@@ -197,9 +197,13 @@ class FlatModel:
         vertices = glm.array(vertices)
 
         # get tex coords
-        tex_coords = [glm.vec2(v) for v in sector_verts]
-        tex_coords = tex_coords if self.is_floor else [glm.vec2(v.x, -v.y) for v in tex_coords]
-        tex_coords = glm.array(tex_coords)
+        # Optimization: Condensing to a single list comprehension and unpacking tuples
+        # directly inside the loop avoids creating an intermediate list allocation and
+        # reduces function call overhead, yielding significant speedups.
+        if self.is_floor:
+            tex_coords = glm.array([glm.vec2(x, y) for x, y in sector_verts])
+        else:
+            tex_coords = glm.array([glm.vec2(x, -y) for x, y in sector_verts])
 
         # get indices
         indices = self.get_indices(triangles, sector_verts)
