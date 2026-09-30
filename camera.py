@@ -80,7 +80,8 @@ class Camera:
         dx = self.target.x - self.pos_3d.x
         dy = self.target.y - self.pos_3d.y
         dz = self.target.z - self.pos_3d.z
-        length = (dx * dx + dy * dy + dz * dz) ** 0.5
+        # Optimization: In modern Python, math.hypot is faster than inline power arithmetic.
+        length = math.hypot(dx, dy, dz)
         if length == 0:
             return vec3(0)
         return vec3(dx / length, dy / length, dz / length)
