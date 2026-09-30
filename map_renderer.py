@@ -173,14 +173,21 @@ class MapRenderer:
             p0x, p0y = p0.x, p0.y
             p1x, p1y = p1.x, p1.y
 
-            if p0x < x_min: x_min = p0x
-            if p1x < x_min: x_min = p1x
-            if p0x > x_max: x_max = p0x
-            if p1x > x_max: x_max = p1x
+            # Optimization: When calculating bounding boxes from line segments, comparing the segment's coordinates
+            # against each other first before comparing against the global min/max reduces the total number of
+            # conditional checks required per segment, yielding measurable execution speedups.
+            if p0x < p1x:
+                if p0x < x_min: x_min = p0x
+                if p1x > x_max: x_max = p1x
+            else:
+                if p1x < x_min: x_min = p1x
+                if p0x > x_max: x_max = p0x
 
-            if p0y < y_min: y_min = p0y
-            if p1y < y_min: y_min = p1y
-            if p0y > y_max: y_max = p0y
-            if p1y > y_max: y_max = p1y
+            if p0y < p1y:
+                if p0y < y_min: y_min = p0y
+                if p1y > y_max: y_max = p1y
+            else:
+                if p1y < y_min: y_min = p1y
+                if p0y > y_max: y_max = p0y
 
         return x_min, y_min, x_max, y_max
