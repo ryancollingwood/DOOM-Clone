@@ -45,10 +45,7 @@ def test_camera_movement(mock_engine, key, method_name):
     handler = InputHandler(mock_engine)
 
     # Mock is_key_down to return True only for the specific key
-    def mock_is_key_down(k, _key=key):
-        return k == _key
-
-    with patch('input_handler.is_key_down', side_effect=mock_is_key_down):
+    with patch('input_handler.is_key_down', side_effect=lambda k: k == key):
         with patch('input_handler.is_key_pressed', return_value=False):
             handler.update()
 
