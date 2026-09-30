@@ -197,8 +197,10 @@ class FlatModel:
         vertices = glm.array(vertices)
 
         # get tex coords
-        tex_coords = [glm.vec2(v) for v in sector_verts]
-        tex_coords = tex_coords if self.is_floor else [glm.vec2(v.x, -v.y) for v in tex_coords]
+        if self.is_floor:
+            tex_coords = [glm.vec2(v[0], v[1]) for v in sector_verts]
+        else:
+            tex_coords = [glm.vec2(v[0], -v[1]) for v in sector_verts]
         tex_coords = glm.array(tex_coords)
 
         # get indices
