@@ -6,7 +6,7 @@ mock_pyray = MagicMock()
 sys.modules['pyray'] = mock_pyray
 sys.modules['glm'] = MagicMock()
 
-# Mock KeyboardKey values that are used in input_handler.Key
+# Instead of relying on MagicMock returning 1, we set return_value explicitly or use ints
 mock_pyray.KeyboardKey.KEY_W = 87
 mock_pyray.KeyboardKey.KEY_S = 83
 mock_pyray.KeyboardKey.KEY_A = 65
@@ -17,7 +17,24 @@ mock_pyray.KeyboardKey.KEY_M = 77
 mock_pyray.KeyboardKey.KEY_O = 79
 
 import pytest  # noqa: E402
-from input_handler import InputHandler, Key  # noqa: E402
+from enum import IntEnum
+
+class MockKey(IntEnum):
+    FORWARD = 87
+    BACK = 83
+    STRAFE_LEFT = 65
+    STRAFE_RIGHT = 68
+    UP = 81
+    DOWN = 69
+    MAP = 77
+    SCREEN_SHOT = 79
+
+# Patch the input_handler Key enum before it's used
+import input_handler
+input_handler.Key = MockKey
+Key = MockKey
+
+from input_handler import InputHandler
 
 @pytest.fixture
 def mock_engine():
