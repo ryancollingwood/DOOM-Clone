@@ -169,18 +169,26 @@ class MapRenderer:
         # Optimization: Unpack vec2 attributes into local variables and use simple
         # 'if' branches instead of chained nested ternary operators to avoid
         # repeated attribute lookups and complex branching overhead.
+        # Optimization: When checking for minimums and maximums across line segments,
+        # comparing the segment's coordinate points against each other first guarantees
+        # the smaller and larger values locally. This reduces the number of comparisons
+        # required against the global x_min/x_max per segment, speeding up execution.
         for p0, p1 in segments:
             p0x, p0y = p0.x, p0.y
             p1x, p1y = p1.x, p1.y
 
-            if p0x < x_min: x_min = p0x
-            if p1x < x_min: x_min = p1x
-            if p0x > x_max: x_max = p0x
-            if p1x > x_max: x_max = p1x
+            if p0x < p1x:
+                if p0x < x_min: x_min = p0x
+                if p1x > x_max: x_max = p1x
+            else:
+                if p1x < x_min: x_min = p1x
+                if p0x > x_max: x_max = p0x
 
-            if p0y < y_min: y_min = p0y
-            if p1y < y_min: y_min = p1y
-            if p0y > y_max: y_max = p0y
-            if p1y > y_max: y_max = p1y
+            if p0y < p1y:
+                if p0y < y_min: y_min = p0y
+                if p1y > y_max: y_max = p1y
+            else:
+                if p1y < y_min: y_min = p1y
+                if p0y > y_max: y_max = p0y
 
         return x_min, y_min, x_max, y_max
