@@ -49,6 +49,9 @@ class BSPTreeBuilder:
         append_back = back_segs.append
 
         n_EPS = -EPS
+        node_vec_x = node.splitter_vec_x
+        node_vec_y = node.splitter_vec_y
+        node_c = node.splitter_c
 
         for segment in input_segments[1:]:
             #
@@ -58,11 +61,10 @@ class BSPTreeBuilder:
 
             # Optimization: Inline cross_2d and scalar mathematical evaluation to avoid function call
             # and new object (vec2) creation overheads for each segment in the recursive loop.
-            dx = segment_start.x - node.splitter_p0_x
-            dy = segment_start.y - node.splitter_p0_y
-
-            numerator = dx * node.splitter_vec_y - node.splitter_vec_x * dy
-            denominator = node.splitter_vec_x * segment_vector.y - segment_vector.x * node.splitter_vec_y
+            # Optimization: Algebraically expand distance calculations to utilize pre-calculated
+            # node constants (node_c). This drops 2 subtractions and intermediate variable allocations.
+            numerator = segment_start.x * node_vec_y - node_vec_x * segment_start.y - node_c
+            denominator = node_vec_x * segment_vector.y - segment_vector.x * node_vec_y
 
             # if the denominator is zero the lines are parallel
             # Optimization: Replaced abs() with inline bounds checking to bypass function call overhead.
