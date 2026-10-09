@@ -53,7 +53,12 @@ class Camera:
             # C-extension boundary crossings and yields significantly faster bounds clamping.
             pl = PITCH_LIMIT
             p = self.pitch
-            self.pitch = pl if p > pl else (-pl if p < -pl else p)
+            if p > pl:
+                self.pitch = pl
+            elif p < -pl:
+                self.pitch = -pl
+            else:
+                self.pitch = p
 
     def update_target(self, new_target_pos: vec3):
         self.target.x = self.pos_3d.x + new_target_pos.x
@@ -130,19 +135,34 @@ class Camera:
         if math.isfinite(dx):
             old_x = self.pos_3d.x
             new_x = old_x + dx
-            self.pos_3d.x = new_x if -MAX_WORLD_BOUNDARY <= new_x <= MAX_WORLD_BOUNDARY else (-MAX_WORLD_BOUNDARY if new_x < -MAX_WORLD_BOUNDARY else MAX_WORLD_BOUNDARY)
+            if new_x > MAX_WORLD_BOUNDARY:
+                self.pos_3d.x = MAX_WORLD_BOUNDARY
+            elif new_x < -MAX_WORLD_BOUNDARY:
+                self.pos_3d.x = -MAX_WORLD_BOUNDARY
+            else:
+                self.pos_3d.x = new_x
             self.target.x += self.pos_3d.x - old_x
 
         if math.isfinite(dy):
             old_y = self.pos_3d.y
             new_y = old_y + dy
-            self.pos_3d.y = new_y if -MAX_WORLD_BOUNDARY <= new_y <= MAX_WORLD_BOUNDARY else (-MAX_WORLD_BOUNDARY if new_y < -MAX_WORLD_BOUNDARY else MAX_WORLD_BOUNDARY)
+            if new_y > MAX_WORLD_BOUNDARY:
+                self.pos_3d.y = MAX_WORLD_BOUNDARY
+            elif new_y < -MAX_WORLD_BOUNDARY:
+                self.pos_3d.y = -MAX_WORLD_BOUNDARY
+            else:
+                self.pos_3d.y = new_y
             self.target.y += self.pos_3d.y - old_y
 
         if math.isfinite(dz):
             old_z = self.pos_3d.z
             new_z = old_z + dz
-            self.pos_3d.z = new_z if -MAX_WORLD_BOUNDARY <= new_z <= MAX_WORLD_BOUNDARY else (-MAX_WORLD_BOUNDARY if new_z < -MAX_WORLD_BOUNDARY else MAX_WORLD_BOUNDARY)
+            if new_z > MAX_WORLD_BOUNDARY:
+                self.pos_3d.z = MAX_WORLD_BOUNDARY
+            elif new_z < -MAX_WORLD_BOUNDARY:
+                self.pos_3d.z = -MAX_WORLD_BOUNDARY
+            else:
+                self.pos_3d.z = new_z
             self.target.z += self.pos_3d.z - old_z
 
     def update_pos_2d(self):
