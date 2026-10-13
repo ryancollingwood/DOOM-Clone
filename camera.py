@@ -126,23 +126,40 @@ class Camera:
         # Optimization: Inlining boundary evaluation using standard Python conditional limits
         # avoids PyGLM wrapper function calls (glm.clamp) and function call overhead over move_*
         # methods, eliminating C-extension bridging overhead and improving execution speed.
+        mw = MAX_WORLD_BOUNDARY
+        nmw = -mw
 
         if math.isfinite(dx):
             old_x = self.pos_3d.x
             new_x = old_x + dx
-            self.pos_3d.x = new_x if -MAX_WORLD_BOUNDARY <= new_x <= MAX_WORLD_BOUNDARY else (-MAX_WORLD_BOUNDARY if new_x < -MAX_WORLD_BOUNDARY else MAX_WORLD_BOUNDARY)
+            if new_x < nmw:
+                self.pos_3d.x = nmw
+            elif new_x > mw:
+                self.pos_3d.x = mw
+            else:
+                self.pos_3d.x = new_x
             self.target.x += self.pos_3d.x - old_x
 
         if math.isfinite(dy):
             old_y = self.pos_3d.y
             new_y = old_y + dy
-            self.pos_3d.y = new_y if -MAX_WORLD_BOUNDARY <= new_y <= MAX_WORLD_BOUNDARY else (-MAX_WORLD_BOUNDARY if new_y < -MAX_WORLD_BOUNDARY else MAX_WORLD_BOUNDARY)
+            if new_y < nmw:
+                self.pos_3d.y = nmw
+            elif new_y > mw:
+                self.pos_3d.y = mw
+            else:
+                self.pos_3d.y = new_y
             self.target.y += self.pos_3d.y - old_y
 
         if math.isfinite(dz):
             old_z = self.pos_3d.z
             new_z = old_z + dz
-            self.pos_3d.z = new_z if -MAX_WORLD_BOUNDARY <= new_z <= MAX_WORLD_BOUNDARY else (-MAX_WORLD_BOUNDARY if new_z < -MAX_WORLD_BOUNDARY else MAX_WORLD_BOUNDARY)
+            if new_z < nmw:
+                self.pos_3d.z = nmw
+            elif new_z > mw:
+                self.pos_3d.z = mw
+            else:
+                self.pos_3d.z = new_z
             self.target.z += self.pos_3d.z - old_z
 
     def update_pos_2d(self):
