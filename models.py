@@ -296,11 +296,15 @@ class WallModel:
         vertex_count = 4
 
         # get seg coords
-        (x0, z0), (x1, z1) = self.segment.pos
+        p0, p1 = self.segment.pos
+        x0 = p0.x
+        z0 = p0.y
+        x1 = p1.x
+        z1 = p1.y
 
-        # Optimization: Inlining scalar math (dx, dz) and (dx*dx + dz*dz)**0.5 avoids
-        # function call overhead (glm.length, glm.normalize) and intermediate Python object
-        # allocations (vec3) in this hot path, yielding roughly a ~3.8x speedup.
+        # Optimization: Extracting attributes explicitly bypasses sequence unpacking overhead
+        # over custom iterables. Inlining scalar math (dx, dz) and (dx*dx + dz*dz)**0.5 avoids
+        # function call overhead and intermediate Python object allocations.
         dx = x1 - x0
         dz = z1 - z0
         width = (dx * dx + dz * dz) ** 0.5
