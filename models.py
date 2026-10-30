@@ -169,17 +169,36 @@ class FlatModel:
         # This reduces membership lookup complexity from O(N) to O(1) inside the loop.
         vert_index_map = {vert: i for i, vert in enumerate(outline_verts)}
 
-        # Optimization: Using a list comprehension instead of manual loops with `.append()` calls
-        # avoids method lookup overhead. Placing the `is_floor` condition outside the loop avoids
-        # redundant evaluation, and using `reversed()` avoids creating an intermediate list allocation.
+        # Optimization: Unrolling the nested loop and calling `.append()` directly to a flat list
+        # is faster than nested list comprehensions when constructing arrays of flattened data,
+        # completely avoiding intermediate iterator and unpacking overhead in this hot path.
+        res = []
+        append = res.append
         if self.is_floor:
-            return [vert_index_map[(v.x, v.y)] for t in triangles for v in reversed(t.vertices)]
+            for t in triangles:
+                v = t.vertices
+                v0, v1, v2 = v[0], v[1], v[2]
+                append(vert_index_map[(v2.x, v2.y)])
+                append(vert_index_map[(v1.x, v1.y)])
+                append(vert_index_map[(v0.x, v0.y)])
         else:
-            return [vert_index_map[(v.x, v.y)] for t in triangles for v in t.vertices]
+            for t in triangles:
+                v = t.vertices
+                v0, v1, v2 = v[0], v[1], v[2]
+                append(vert_index_map[(v0.x, v0.y)])
+                append(vert_index_map[(v1.x, v1.y)])
+                append(vert_index_map[(v2.x, v2.y)])
+        return res
 
     def get_vertices(self, outline_verts):
         height = self.sector.floor_h if self.is_floor else self.sector.ceil_h
-        return [vec3(v[0], height, v[1]) for v in outline_verts]
+        res = []
+        append = res.append
+        for v in outline_verts:
+            append(v[0])
+            append(height)
+            append(v[1])
+        return res
 
     def get_polygon_mesh(self) -> ray.Mesh:
         # triangulation
@@ -193,15 +212,25 @@ class FlatModel:
         normals = glm.array([normal] * vertex_count)
 
         # get vertices
+        # Optimization: Passing a flat list of primitive floats to `from_numbers` directly avoids
+        # intermediate PyGLM object allocations (`vec3`) and wrapper unpacking overhead.
         vertices = self.get_vertices(sector_verts)
-        vertices = glm.array(vertices)
+        vertices = glm.array.from_numbers(glm.float32, *vertices)
 
         # get tex coords
+        # Optimization: Manually unrolling and flattening primitive floats to `from_numbers`
+        # avoids intermediate PyGLM object allocations (`vec2`).
+        tex_coords = []
+        append = tex_coords.append
         if self.is_floor:
-            tex_coords = [glm.vec2(v[0], v[1]) for v in sector_verts]
+            for v in sector_verts:
+                append(v[0])
+                append(v[1])
         else:
-            tex_coords = [glm.vec2(v[0], -v[1]) for v in sector_verts]
-        tex_coords = glm.array(tex_coords)
+            for v in sector_verts:
+                append(v[0])
+                append(-v[1])
+        tex_coords = glm.array.from_numbers(glm.float32, *tex_coords)
 
         # get indices
         indices = self.get_indices(triangles, sector_verts)
